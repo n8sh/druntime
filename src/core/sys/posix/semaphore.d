@@ -158,6 +158,22 @@ else version (CRuntime_UClibc)
 
     enum SEM_FAILED      = cast(sem_t*) null;
 }
+else version (Haiku)
+{
+    struct sem_t
+    {
+        uint type;
+        union _sem_t_u
+        {
+            uint named_sem_id;
+            uint unnamed_sem;
+        }
+        _sem_t_u u;
+        int[2] padding;
+    }
+
+    enum SEM_FAILED      = cast(sem_t*) -1;
+}
 else
 {
     static assert(false, "Unsupported platform");
@@ -217,6 +233,10 @@ else version (CRuntime_Musl)
     int sem_timedwait(sem_t*, in timespec*);
 }
 else version (CRuntime_UClibc)
+{
+    int sem_timedwait(sem_t*, in timespec*);
+}
+else version (Haiku)
 {
     int sem_timedwait(sem_t*, in timespec*);
 }

@@ -1034,6 +1034,118 @@ else version (CRuntime_UClibc)
     enum EAI_INTR           = -104;
     enum EAI_IDN_ENCODE     = -105;
 }
+else version (Haiku)
+{
+    // https://github.com/haiku/haiku/blob/master/headers/posix/netdb.h
+    struct hostent
+    {
+        char*   h_name;
+        char**  h_aliases;
+        int     h_addrtype;
+        int     h_length;
+        char**  h_addr_list;
+        extern (D) inout(char)* h_addr()() inout @property { return h_addr_list[0]; } // non-standard
+    }
+
+    struct netent
+    {
+        char*     n_name;
+        char**    n_aliases;
+        int       n_addrtype;
+        in_addr_t n_net;
+    }
+
+    struct protoent
+    {
+        char*   p_name;
+        char**  p_aliases;
+        int     p_proto;
+    }
+
+    struct servent
+    {
+        char*   s_name;
+        char**  s_aliases;
+        int     s_port;
+        char*   s_proto;
+    }
+
+    enum IPPORT_RESERVED = 1024;
+
+    //h_errno
+    ref int __h_errno();
+    alias h_errno = __h_errno;
+
+    enum
+    {
+        NETDB_INTERNAL  = -1,
+        NETDB_SUCCESS   =  0,
+        HOST_NOT_FOUND  =  1,
+        TRY_AGAIN       =  2,
+        NO_RECOVERY     =  3,
+        NO_DATA         =  4,
+        NO_ADDRESS      =  NO_DATA,
+    }
+
+    enum HOST_NOT_FOUND = 1;
+    enum NO_DATA        = 4;
+    enum NO_RECOVERY    = 3;
+    enum TRY_AGAIN      = 2;
+
+    struct addrinfo
+    {
+        int         ai_flags;
+        int         ai_family;
+        int         ai_socktype;
+        int         ai_protocol;
+        socklen_t   ai_addrlen;
+        char*       ai_canonname;
+        sockaddr*   ai_addr;
+        addrinfo*   ai_next;
+    }
+
+    enum AI_PASSIVE         = 0x1;
+    enum AI_CANONNAME       = 0x2;
+    enum AI_NUMERICHOST     = 0x4;
+    enum AI_NUMERICSERV     = 0x8;
+    enum AI_MASK            = (AI_PASSIVE | AI_CANONNAME | AI_NUMERICHOST | AI_NUMERICSERV | AI_ADDRCONFIG);
+
+    enum AI_ALL             = 0x00000100;
+    enum AI_V4MAPPED_CFG    = 0x00000200;
+    enum AI_ADDRCONFIG      = 0x00000400;
+    enum AI_V4MAPPED        = 0x00000800;
+    enum AI_DEFAULT         = (AI_V4MAPPED_CFG | AI_ADDRCONFIG);
+
+    enum NI_MAXHOST      = 1025;
+    enum NI_MAXSERV      = 32;
+
+    enum NI_NOFQDN       = 0x00000001;
+    enum NI_NUMERICHOST  = 0x00000002;
+    enum NI_NAMEREQD     = 0x00000004;
+    enum NI_NUMERICSERV  = 0x00000008;
+    enum NI_DGRAM        = 0x00000010;
+    enum NI_WITHSCOPEID  = 0x00000020;
+    enum NI_NUMERICSCOPE = 0x00000040;
+
+    enum
+    {
+        EAI_ADDRFAMILY  = 1,
+        EAI_AGAIN       = 2,
+        EAI_BADFLAGS    = 3,
+        EAI_FAIL        = 4,
+        EAI_FAMILY      = 5,
+        EAI_MEMORY      = 6,
+        EAI_NODATA      = 7,
+        EAI_NONAME      = 8,
+        EAI_SERVICE     = 9,
+        EAI_SOCKTYPE    = 10,
+        EAI_SYSTEM      = 11,
+        EAI_BADHINTS    = 12,
+        EAI_PROTOCOL    = 13,
+        EAI_OVERFLOW    = 14,
+        EAI_MAX         = 15,
+    }
+}
 else
 {
     static assert(false, "Unsupported platform");

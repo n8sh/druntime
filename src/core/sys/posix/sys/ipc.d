@@ -149,6 +149,32 @@ else version (NetBSD)
 
     key_t ftok(in char*, int);
 }
+else version (OpenBSD)
+{
+    // https://github.com/openbsd/src/blob/master/sys/sys/ipc.h
+    struct ipc_perm
+    {
+        uid_t   cuid;
+        gid_t   cgid;
+        uid_t   uid;
+        gid_t   gid;
+        mode_t  mode;
+        ushort  seq;
+        key_t   key;
+    }
+
+    enum IPC_CREAT      = 0x0200; // 01000
+    enum IPC_EXCL       = 0x0400; // 02000
+    enum IPC_NOWAIT     = 0x0800; // 04000
+
+    enum key_t IPC_PRIVATE = 0;
+
+    enum IPC_RMID       = 0;
+    enum IPC_SET        = 1;
+    enum IPC_STAT       = 2;
+
+    key_t ftok(in char*, int);
+}
 else version (DragonFlyBSD)
 {
     struct ipc_perm
@@ -244,6 +270,31 @@ else version (CRuntime_UClibc)
     enum IPC_SET        = 1;
     enum IPC_STAT       = 2;
     enum IPC_INFO       = 3;
+
+    key_t ftok(in char*, int);
+}
+else version (Haiku)
+{
+    // https://github.com/haiku/haiku/blob/master/headers/posix/sys/ipc.h
+    struct ipc_perm
+    {
+        key_t   key;
+        uid_t   uid;
+        gid_t   gid;
+        uid_t   cuid;
+        gid_t   cgid;
+        mode_t  mode;
+    }
+
+    enum IPC_CREAT      = 0x0200; // 01000
+    enum IPC_EXCL       = 0x0400; // 02000
+    enum IPC_NOWAIT     = 0x0800; // 04000
+
+    enum key_t IPC_PRIVATE = 0;
+
+    enum IPC_RMID       = 0;
+    enum IPC_SET        = 1;
+    enum IPC_STAT       = 2;
 
     key_t ftok(in char*, int);
 }

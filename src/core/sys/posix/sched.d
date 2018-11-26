@@ -182,6 +182,22 @@ else version (CRuntime_UClibc)
 
     enum SCHED_RESET_ON_FORK    = 0x40000000;
 }
+else version (Haiku)
+{
+    //https://github.com/haiku/haiku/blob/master/headers/posix/sched.h
+    struct sched_param
+    {
+        int sched_priority;
+    }
+
+    enum
+    {
+        SCHED_FIFO      = 1,
+        SCHED_RR        = 2,
+        SCHED_SPORADIC  = 3,
+        SCHED_OTHER     = 4,
+    }
+}
 else
 {
     static assert(false, "Unsupported platform");
@@ -239,6 +255,10 @@ else version (CRuntime_UClibc)
 {
     int sched_yield();
 }
+else version (Haiku)
+{
+    int sched_yield();
+}
 else
 {
     static assert(false, "Unsupported platform");
@@ -281,7 +301,8 @@ else version (OpenBSD)
 {
     int sched_get_priority_min(int);
     int sched_get_priority_max(int);
-    int sched_rr_get_interval(pid_t, timespec*);
+    // sched_rr_get_interval not yet ready in OpenBSD: https://github.com/openbsd/src/blob/master/include/sched.h
+    //int sched_rr_get_interval(pid_t, timespec*);
 }
 else version (DragonFlyBSD)
 {
@@ -312,6 +333,11 @@ else version (CRuntime_UClibc)
     int sched_get_priority_max(int);
     int sched_get_priority_min(int);
     int sched_rr_get_interval(pid_t, timespec*);
+}
+else version (Haiku)
+{
+    int sched_get_priority_max(int);
+    int sched_get_priority_min(int);
 }
 else
 {

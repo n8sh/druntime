@@ -195,6 +195,19 @@ else version (CRuntime_UClibc)
         char*   pw_shell;
     }
 }
+else version (Haiku)
+{
+    struct passwd
+    {
+        char*   pw_name;
+        char*   pw_passwd;
+        uid_t   pw_uid;
+        gid_t   pw_gid;
+        char*   pw_dir;
+        char*   pw_shell;
+        char*   pw_gecos;
+    }
+}
 else
 {
     static assert(false, "Unsupported platform");
@@ -259,6 +272,11 @@ else version (CRuntime_Musl)
 {
 }
 else version (CRuntime_UClibc)
+{
+    int getpwnam_r(in char*, passwd*, char*, size_t, passwd**);
+    int getpwuid_r(uid_t, passwd*, char*, size_t, passwd**);
+}
+else version (Haiku)
 {
     int getpwnam_r(in char*, passwd*, char*, size_t, passwd**);
     int getpwuid_r(uid_t, passwd*, char*, size_t, passwd**);
@@ -329,6 +347,12 @@ else version (CRuntime_Musl)
     int getpwuid_r(uid_t, passwd*, char*, size_t, passwd**);
 }
 else version (CRuntime_UClibc)
+{
+    void    endpwent();
+    passwd* getpwent();
+    void    setpwent();
+}
+else version (Haiku)
 {
     void    endpwent();
     passwd* getpwent();

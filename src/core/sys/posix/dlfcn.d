@@ -348,3 +348,31 @@ else version (CRuntime_UClibc)
     void* dlopen(in char*, int);
     void* dlsym(void*, in char*);
 }
+else version (Haiku)
+{
+    // https://github.com/haiku/haiku/blob/master/headers/posix/dlfcn.h
+    enum
+    {
+        RTLD_LAZY   = 0,
+        RTLD_NOW    = 1,
+        RTLD_LOCAL  = 0,
+        RTLD_GLOBAL = 2,
+    }
+    /* not-yet-POSIX extensions (dlsym() handles) */
+    enum RTLD_DEFAULT = cast(void*)  0;
+    enum RTLD_NEXT    = cast(void*) c_long(-1);
+
+    struct Dl_info
+    {
+        const(char)* dli_fname;
+        void*        dli_fbase;
+        const(char)* dli_sname;
+        void*        dli_saddr;
+    }
+
+    int   dlclose(void*);
+    char* dlerror();
+    void* dlopen(in char*, int);
+    void* dlsym(void*, in char*);
+    int   dladdr(const(void)* addr, Dl_info* info);
+}

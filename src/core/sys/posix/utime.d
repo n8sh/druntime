@@ -94,6 +94,17 @@ else version (NetBSD)
 
     int utime(in char*, in utimbuf*);
 }
+else version (OpenBSD)
+{
+    // https://github.com/openbsd/src/blob/master/include/utime.h
+    struct utimbuf
+    {
+        time_t  actime;
+        time_t  modtime;
+    }
+
+    int utime(in char*, in utimbuf*);
+}
 else version (DragonFlyBSD)
 {
     struct utimbuf
@@ -126,6 +137,17 @@ else version (CRuntime_Bionic)
 }
 else version (CRuntime_UClibc)
 {
+    struct utimbuf
+    {
+        time_t  actime;
+        time_t  modtime;
+    }
+
+    int utime(in char*, in utimbuf*);
+}
+else version (Haiku)
+{
+    // https://github.com/haiku/haiku/blob/master/headers/posix/utime.h
     struct utimbuf
     {
         time_t  actime;

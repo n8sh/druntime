@@ -164,7 +164,7 @@ version (CoreDdoc) enum ClockType
     normal = 0,
 
     /++
-        $(BLUE Linux-Only)
+        $(BLUE Linux,OpenBSD-Only)
 
         Uses $(D CLOCK_BOOTTIME).
       +/
@@ -214,7 +214,7 @@ version (CoreDdoc) enum ClockType
     precise = 3,
 
     /++
-        $(BLUE Linux,Solaris-Only)
+        $(BLUE Linux,OpenBSD,Solaris,Haiku-Only)
 
         Uses $(D CLOCK_PROCESS_CPUTIME_ID).
       +/
@@ -251,14 +251,14 @@ version (CoreDdoc) enum ClockType
     second = 6,
 
     /++
-        $(BLUE Linux,Solaris-Only)
+        $(BLUE Linux,OpenBSD,Solaris,Haiku-Only)
 
         Uses $(D CLOCK_THREAD_CPUTIME_ID).
       +/
     threadCPUTime = 7,
 
     /++
-        $(BLUE FreeBSD-Only)
+        $(BLUE FreeBSD,OpenBSD-Only)
 
         Uses $(D CLOCK_UPTIME).
       +/
@@ -313,6 +313,17 @@ else version (FreeBSD) enum ClockType
     uptimeCoarse = 9,
     uptimePrecise = 10,
 }
+else version (OpenBSD) enum ClockType
+{
+    normal = 0,
+    bootTime = 1,
+    coarse = 2,
+    precise = 3,
+    processCPUTime = 4,
+    second = 6,
+    threadCPUTime = 7,
+    uptime = 8,
+}
 else version (NetBSD) enum ClockType
 {
     normal = 0,
@@ -331,6 +342,15 @@ else version (DragonFlyBSD) enum ClockType
     uptimePrecise = 10,
 }
 else version (Solaris) enum ClockType
+{
+    normal = 0,
+    coarse = 2,
+    precise = 3,
+    processCPUTime = 4,
+    second = 6,
+    threadCPUTime = 7,
+}
+else version (Haiku) enum ClockType
 {
     normal = 0,
     coarse = 2,
@@ -385,6 +405,20 @@ version (Posix)
             case second: assert(0);
             }
         }
+        else version (OpenBSD)
+        {
+            with (ClockType) final switch (clockType)
+            {
+                case normal: return CLOCK_MONOTONIC;
+                case bootTime: return CLOCK_BOOTTIME;
+                case coarse: return CLOCK_MONOTONIC;
+                case precise: return CLOCK_MONOTONIC;
+                case processCPUTime: return CLOCK_PROCESS_CPUTIME_ID;
+                case threadCPUTime: return CLOCK_THREAD_CPUTIME_ID;
+                case uptime: return CLOCK_UPTIME;
+                case second: assert(0);
+            }
+        }
         else version (NetBSD)
         {
             import core.sys.netbsd.time;
@@ -413,6 +447,18 @@ version (Posix)
         else version (Solaris)
         {
             import core.sys.solaris.time;
+            with(ClockType) final switch (clockType)
+            {
+            case coarse: return CLOCK_MONOTONIC;
+            case normal: return CLOCK_MONOTONIC;
+            case precise: return CLOCK_MONOTONIC;
+            case processCPUTime: return CLOCK_PROCESS_CPUTIME_ID;
+            case threadCPUTime: return CLOCK_THREAD_CPUTIME_ID;
+            case second: assert(0);
+            }
+        }
+        else version (Haiku)
+        {
             with(ClockType) final switch (clockType)
             {
             case coarse: return CLOCK_MONOTONIC;

@@ -145,6 +145,9 @@ COPY=\
 	$(IMPDIR)\core\sys\linux\sys\prctl.d \
 	\
 	$(IMPDIR)\core\sys\openbsd\dlfcn.d \
+	$(IMPDIR)\core\sys\openbsd\execinfo.d \
+	$(IMPDIR)\core\sys\openbsd\sys\exec_elf.d \
+	$(IMPDIR)\core\sys\openbsd\sys\link_elf.d \
 	\
 	$(IMPDIR)\core\sys\posix\arpa\inet.d \
 	$(IMPDIR)\core\sys\posix\aio.d \

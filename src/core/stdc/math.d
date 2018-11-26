@@ -195,6 +195,11 @@ else version (CRuntime_Glibc)
         static assert(false, "Architecture not supported.");
     }
 }
+else version (Haiku)
+{
+    enum int FP_ILOGB0        = int.max; ///
+    enum int FP_ILOGBNAN      = int.max; ///
+}
 else
 {
     ///
@@ -207,8 +212,16 @@ else
 enum int MATH_ERRNO       = 1;
 ///
 enum int MATH_ERREXCEPT   = 2;
-///
-enum int math_errhandling = MATH_ERRNO | MATH_ERREXCEPT;
+version (Haiku)
+{
+    ///
+    enum int math_errhandling = 0;
+}
+else
+{
+    ///
+    enum int math_errhandling = MATH_ERRNO | MATH_ERREXCEPT;
+}
 
 version (none)
 {
@@ -1560,6 +1573,62 @@ else version (CRuntime_Bionic)
     ///
     pure int signbit(real x)         { return __signbitl(x); }
   }
+}
+else version (Haiku)
+{
+    enum
+    {
+        FP_NAN          = 0, ///
+        FP_INFINITE     = 1, ///
+        FP_ZERO         = 2, ///
+        FP_SUBNORMAL    = 3, ///
+        FP_NORMAL       = 4, ///
+    }
+
+    extern int          __fpclassifyf(float value); ///
+    extern int          __signbitf(float value); ///
+    extern int          __finitef(float value); ///
+    extern int          __isnanf(float value); ///
+    extern int          __isinff(float value); ///
+
+    extern int          __fpclassifyl(c_long_double value); ///
+    extern int          __signbitl(c_long_double value); ///
+    extern int          __finitel(c_long_double value); ///
+    extern int          __isnanl(c_long_double value); ///
+    extern int          __isinfl(c_long_double value); ///
+
+    extern int          __fpclassify(double value); ///
+    extern int          __signbit(double value); ///
+    extern int          __finite(double value); ///
+    extern int          __isnan(double value); ///
+    extern int          __isinf(double value); ///
+
+    extern (D)
+    {
+        pure int fpclassify()(float x)     { return __fpclassifyf(x); }
+        pure int fpclassify()(double x)    { return __fpclassify(x); }
+        pure int fpclassify()(real x)      { return __fpclassifyl(x); }
+
+        pure int isfinite()(float x)       { return __isfinitef(x); }
+        pure int isfinite()(double x)      { return __isfinite(x); }
+        pure int isfinite()(real x)        { return __isfinitel(x); }
+
+        pure int isinf()(float x)          { return __isinff(x); }
+        pure int isinf()(double x)         { return __isinf(x); }
+        pure int isinf()(real x)           { return __isinfl(x); }
+
+        pure int isnan()(float x)          { return isnanf(x); }
+        pure int isnan()(double x)         { return __isnan(x); }
+        pure int isnan()(real x)           { return __isnanl(x); }
+
+        pure int isnormal()(float x)       { return __isnormalf(x); }
+        pure int isnormal()(double x)      { return __isnormal(x); }
+        pure int isnormal()(real x)        { return __isnormall(x); }
+
+        pure int signbit()(float x)        { return __signbitf(x); }
+        pure int signbit()(double x)       { return __signbit(x); }
+        pure int signbit()(real x)         { return __signbitl(x); }
+    }
 }
 
 extern (D)
@@ -2969,8 +3038,6 @@ else version (OpenBSD)
     int     ilogbl(real x);
     ///
     real    ldexpl(real x, int exp);
-    ///
-    real    logbl(real x);
     ///
     real    logb10l(real x);
     ///

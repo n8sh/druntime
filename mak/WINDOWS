@@ -432,6 +432,15 @@ $(IMPDIR)\core\sys\linux\sys\time.d : src\core\sys\linux\sys\time.d
 $(IMPDIR)\core\sys\openbsd\dlfcn.d : src\core\sys\openbsd\dlfcn.d
 	copy $** $@
 
+$(IMPDIR)\core\sys\openbsd\execinfo.d : src\core\sys\openbsd\execinfo.d
+	copy $** $@
+
+$(IMPDIR)\core\sys\openbsd\sys\exec_elf.d : src\core\sys\openbsd\sys\exec_elf.d
+	copy $** $@
+
+$(IMPDIR)\core\sys\openbsd\sys\link_elf.d : src\core\sys\openbsd\sys\link_elf.d
+	copy $** $@
+
 $(IMPDIR)\core\sys\posix\arpa\inet.d : src\core\sys\posix\arpa\inet.d
 	copy $** $@
 

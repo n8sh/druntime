@@ -65,6 +65,10 @@ else version (NetBSD)
 {
     time_t timegm(tm*); // non-standard
 }
+else version (OpenBSD)
+{
+    time_t timegm(tm*); // non-standard
+}
 else version (DragonFlyBSD)
 {
     time_t timegm(tm*); // non-standard
@@ -84,6 +88,10 @@ else version (CRuntime_Musl)
 else version (CRuntime_UClibc)
 {
     time_t timegm(tm*);
+}
+else version (Haiku)
+{
+    // Only has timegm with _BSD_SOURCE.
 }
 else
 {
@@ -145,6 +153,16 @@ else version (NetBSD)
     // time.h
     enum CLOCK_MONOTONIC         = 3;
 }
+else version (OpenBSD)
+{
+    // https://github.com/openbsd/src/blob/master/sys/sys/_time.h
+    enum CLOCK_REALTIME              = 0;
+    enum CLOCK_PROCESS_CPUTIME_ID    = 2;
+    enum CLOCK_MONOTONIC             = 3;
+    enum CLOCK_THREAD_CPUTIME_ID     = 4;
+    enum CLOCK_UPTIME                = 5;
+    enum CLOCK_BOOTTIME              = 6;
+}
 else version (DragonFlyBSD)
 {   // time.h
     enum CLOCK_MONOTONIC         = 4;
@@ -162,6 +180,14 @@ else version (Darwin)
 else version (Solaris)
 {
     enum CLOCK_MONOTONIC = 4;
+}
+else version (Haiku)
+{
+    // https://github.com/haiku/haiku/blob/master/headers/posix/time.h
+    enum CLOCK_MONOTONIC             = cast(clockid_t)  0;
+    enum CLOCK_REALTIME              = cast(clockid_t) -1;
+    enum CLOCK_PROCESS_CPUTIME_ID    = cast(clockid_t) -2;
+    enum CLOCK_THREAD_CPUTIME_ID     = cast(clockid_t) -3;
 }
 else
 {
@@ -284,6 +310,31 @@ else version (FreeBSD)
     int timer_gettime(timer_t, itimerspec*);
     int timer_getoverrun(timer_t);
     int timer_settime(timer_t, int, in itimerspec*, itimerspec*);
+}
+else version (OpenBSD)
+{
+    // CLOCK_THREAD_CPUTIME_ID defined above.
+
+    // https://github.com/openbsd/src/blob/master/sys/sys/_time.h
+    struct itimerspec
+    {
+        timespec it_interval;
+        timespec it_value;
+    }
+
+    // CLOCK_REALTIME defined above.
+    enum TIMER_RELTIME = 0x0;
+    enum TIMER_ABSTIME = 0x1;
+
+    // https://github.com/openbsd/src/blob/master/sys/sys/_types.h
+    alias int clockid_t;
+    alias int timer_t;
+
+    // https://github.com/openbsd/src/blob/master/include/time.h
+    int clock_getres(clockid_t, timespec*);
+    int clock_gettime(clockid_t, timespec*);
+    int clock_settime(clockid_t, in timespec*);
+    int nanosleep(in timespec*, in timespec*);
 }
 else version (DragonFlyBSD)
 {
@@ -456,6 +507,33 @@ else version (CRuntime_UClibc)
     int timer_getoverrun(timer_t);
     int timer_settime(timer_t, int, in itimerspec*, itimerspec*);
 }
+else version (Haiku)
+{
+    // CLOCK_THREAD_CPUTIME_ID defined above.
+
+    // https://github.com/haiku/haiku/blob/master/headers/posix/time.h
+    struct itimerspec
+    {
+        timespec it_interval;
+        timespec it_value;
+    }
+
+    enum CLOCK_REALTIME      = 0;
+    enum TIMER_ABSTIME       = 0x01;
+
+    alias int clockid_t; // <sys/_types.h>
+    alias int timer_t;
+
+    int clock_getres(clockid_t, timespec*);
+    int clock_gettime(clockid_t, timespec*);
+    int clock_settime(clockid_t, in timespec*);
+    int nanosleep(in timespec*, timespec*);
+    int timer_create(clockid_t, sigevent*, timer_t*);
+    int timer_delete(timer_t);
+    int timer_gettime(timer_t, itimerspec*);
+    int timer_getoverrun(timer_t);
+    int timer_settime(timer_t, int, in itimerspec*, itimerspec*);
+}
 else
 {
     static assert(false, "Unsupported platform");
@@ -499,6 +577,13 @@ else version (NetBSD)
     tm*   gmtime_r(in time_t*, tm*);
     tm*   localtime_r(in time_t*, tm*);
 }
+else version (OpenBSD)
+{
+    char* asctime_r(in tm*, char*);
+    char* ctime_r(in time_t*, char*);
+    tm*   gmtime_r(in time_t*, tm*);
+    tm*   localtime_r(in time_t*, tm*);
+}
 else version (DragonFlyBSD)
 {
     char* asctime_r(in tm*, char*);
@@ -528,6 +613,13 @@ else version (CRuntime_Musl)
     tm*   localtime_r(in time_t*, tm*);
 }
 else version (CRuntime_UClibc)
+{
+    char* asctime_r(in tm*, char*);
+    char* ctime_r(in time_t*, char*);
+    tm*   gmtime_r(in time_t*, tm*);
+    tm*   localtime_r(in time_t*, tm*);
+}
+else version (Haiku)
 {
     char* asctime_r(in tm*, char*);
     char* ctime_r(in time_t*, char*);
@@ -578,6 +670,14 @@ else version (NetBSD)
     tm*   getdate(in char*);
     char* strptime(in char*, in char*, tm*);
 }
+else version (OpenBSD)
+{
+    extern __gshared int    daylight;
+    extern __gshared c_long timezone;
+
+    //tm*   getdate(in char*);
+    char* strptime(in char*, in char*, tm*);
+}
 else version (DragonFlyBSD)
 {
     //tm*   getdate(in char*);
@@ -610,6 +710,14 @@ else version (CRuntime_UClibc)
     extern __gshared c_long timezone;
 
     tm*   getdate(in char*);
+    char* strptime(in char*, in char*, tm*);
+}
+else version (Haiku)
+{
+    extern __gshared int    daylight;
+    extern __gshared c_long timezone;
+
+    //tm*   getdate(in char*);
     char* strptime(in char*, in char*, tm*);
 }
 else

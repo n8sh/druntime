@@ -53,6 +53,20 @@ else version (FreeBSD)
      */
     void __assert(const(char)* exp, const(char)* file, uint line);
 }
+else version (NetBSD)
+{
+    // https://github.com/NetBSD/src/blob/trunk/include/assert.h
+    void __assert(const(char)*, int, const(char)*);
+    void __assert13(const(char)*, int, const(char)*, const(char)*);
+    void __diagassert(const(char)*, int, const(char)*);
+    void __diagassert13(const(char)*, int, const(char)*, const(char)*);
+}
+else version (OpenBSD)
+{
+    // https://github.com/openbsd/src/blob/master/include/assert.h
+    void __assert(const(char)*, int, const(char)*);
+    void __assert2(const(char)*, int, const(char)*, const(char)*);
+}
 else version (DragonFlyBSD)
 {
     /***
@@ -89,6 +103,12 @@ else version (CRuntime_UClibc)
 else version (Solaris)
 {
     void __assert_c99(const(char)* exp, const(char)* file, uint line, const(char)* func);
+}
+else version (Haiku)
+{
+    // https://github.com/haiku/haiku/blob/master/headers/posix/assert.h
+    void __assert_fail(const(char)* exp, const(char)* file, uint line, const(char)* func);
+    void __assert_perror_fail(int errnum, const(char)* file, uint line, const(char)* func);
 }
 else
 {

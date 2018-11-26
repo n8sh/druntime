@@ -163,6 +163,33 @@ else version (NetBSD)
     int setitimer(int, in itimerval*, itimerval*);
     int utimes(in char*, ref const(timeval)[2]);
 }
+else version (OpenBSD)
+{
+    // https://github.com/openbsd/src/blob/master/sys/sys/time.h
+    struct timeval
+    {
+        time_t      tv_sec;
+        suseconds_t tv_usec;
+    }
+
+    struct itimerval
+    {
+        timeval it_interval;
+        timeval it_value;
+    }
+
+    // non-standard
+    struct timezone_t
+    {
+        int tz_minuteswest;
+        int tz_dsttime;
+    }
+
+    int getitimer(int, itimerval*);
+    int gettimeofday(timeval*, timezone_t*); // timezone_t* is normally void*
+    int setitimer(int, in itimerval*, itimerval*);
+    int utimes(in char*, ref const(timeval)[2]);
+}
 else version (DragonFlyBSD)
 {
     struct timeval
@@ -257,6 +284,37 @@ else version (CRuntime_UClibc)
 
     int getitimer(int, itimerval*);
     int gettimeofday(timeval*, void*);
+    int setitimer(int, in itimerval*, itimerval*);
+    int utimes(in char*, ref const(timeval)[2]);
+}
+else version (Haiku)
+{
+    // https://github.com/haiku/haiku/blob/master/headers/posix/sys/time.h
+    struct timeval
+    {
+        time_t      tv_sec;
+        suseconds_t tv_usec;
+    }
+
+    struct itimerval
+    {
+        timeval it_interval;
+        timeval it_value;
+    }
+
+    struct timezone
+    {
+        int tz_minuteswest;
+        int tz_dsttime;
+    }
+    alias timezone timezone_t; // Not called this in Haiku.
+
+    enum ITIMER_REAL    = 1;
+    enum ITIMER_VIRTUAL = 2;
+    enum ITIMER_PROF    = 3;
+
+    int getitimer(int, itimerval*);
+    int gettimeofday(timeval*, void*); // second argument is normally void*
     int setitimer(int, in itimerval*, itimerval*);
     int utimes(in char*, ref const(timeval)[2]);
 }

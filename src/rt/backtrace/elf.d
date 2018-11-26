@@ -13,6 +13,14 @@ module rt.backtrace.elf;
 
 version (linux) version = linux_or_bsd;
 else version (FreeBSD) version = linux_or_bsd;
+else version (NetBSD) version = linux_or_bsd;
+else version (OpenBSD)
+{
+    // OpenBSD deliberately disallows getting the full path of the running
+    // executable on privacy/security grounds.
+    // TODO: There may be a workaround since we don't really care about the path
+    // and just want to inspect the contents of the running executable.
+}
 else version (DragonFlyBSD) version = linux_or_bsd;
 
 version (linux_or_bsd):
@@ -22,6 +30,7 @@ import core.sys.posix.unistd;
 
 version (linux) import core.sys.linux.elf;
 version (FreeBSD) import core.sys.freebsd.sys.elf;
+version (NetBSD) import core.sys.netbsd.sys.elf;
 version (DragonFlyBSD) import core.sys.dragonflybsd.sys.elf;
 
 struct Image

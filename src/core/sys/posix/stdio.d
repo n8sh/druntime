@@ -246,6 +246,21 @@ else version (CRuntime_UClibc)
     off_t ftello(FILE*);
   }
 }
+else version (OpenBSD)
+{
+    // https://github.com/openbsd/src/blob/master/include/stdio.h
+    enum L_ctermid = 1024;
+    int   fseeko(FILE*, off_t, int);
+    off_t ftello(FILE*);
+}
+else version (Haiku)
+{
+    // https://github.com/haiku/haiku/blob/master/headers/posix/stdio.h
+    enum L_ctermid = 32;
+    enum L_cuserid = 32;
+    int   fseeko(FILE*, off_t, int);
+    off_t ftello(FILE*);
+}
 else version (Posix)
 {
     int   fseeko(FILE*, off_t, int);
@@ -275,12 +290,15 @@ else version (OpenBSD)                      // as of OpenBSD 5.4
     version = HaveMemstream;
 else version (CRuntime_UClibc)
     version = HaveMemstream;
+else version (Haiku)
+    version = HaveMemstream;
 
 version (HaveMemstream)
 {
     FILE*  fmemopen(in void* buf, in size_t size, in char* mode);
     FILE*  open_memstream(char** ptr, size_t* sizeloc);
     version (CRuntime_UClibc) {} else
+    version (Haiku) {} else
     FILE*  open_wmemstream(wchar_t** ptr, size_t* sizeloc);
 }
 
@@ -328,6 +346,16 @@ else version (Solaris)
     int    putchar_unlocked(int);
 }
 else version (CRuntime_UClibc)
+{
+    void   flockfile(FILE*);
+    int    ftrylockfile(FILE*);
+    void   funlockfile(FILE*);
+    int    getc_unlocked(FILE*);
+    int    getchar_unlocked();
+    int    putc_unlocked(int, FILE*);
+    int    putchar_unlocked(int);
+}
+else version (Haiku)
 {
     void   flockfile(FILE*);
     int    ftrylockfile(FILE*);
@@ -385,6 +413,10 @@ version (Solaris)
 version (CRuntime_UClibc)
 {
     enum P_tmpdir  = "/tmp";
+}
+version (Haiku)
+{
+    enum P_tmpdir  = "/tmp/";
 }
 
 version (HaveMemstream)

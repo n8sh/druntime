@@ -301,6 +301,65 @@ else version (NetBSD)
         RLIMIT_AS     = 10,
     }
 }
+else version (OpenBSD)
+{
+    // https://github.com/openbsd/src/blob/master/sys/sys/resource.h
+    enum
+    {
+        PRIO_PROCESS = 0,
+        PRIO_PGRP    = 1,
+        PRIO_USER    = 2,
+    }
+
+    alias long rlim_t; // https://github.com/openbsd/src/blob/master/sys/sys/_types.h
+
+    enum
+    {
+        RLIM_INFINITY   = (rlim_t(1) << 63) - 1,
+        RLIM_SAVED_MAX  = RLIM_INFINITY,
+        RLIM_SAVED_CUR  = RLIM_INFINITY,
+    }
+
+    enum
+    {
+        RUSAGE_SELF     =  0,
+        RUSAGE_CHILDREN = -1,
+        RUSAGE_THREAD   =  1,
+    }
+
+    struct rusage
+    {
+        timeval ru_utime;
+        timeval ru_stime;
+        c_long ru_maxrss;
+        alias ru_ixrss ru_first;
+        c_long ru_ixrss;
+        c_long ru_idrss;
+        c_long ru_isrss;
+        c_long ru_minflt;
+        c_long ru_majflt;
+        c_long ru_nswap;
+        c_long ru_inblock;
+        c_long ru_oublock;
+        c_long ru_msgsnd;
+        c_long ru_msgrcv;
+        c_long ru_nsignals;
+        c_long ru_nvcsw;
+        c_long ru_nivcsw;
+        alias ru_nivcsw ru_last;
+    }
+
+    enum
+    {
+        RLIMIT_CORE   =  4,
+        RLIMIT_CPU    =  0,
+        RLIMIT_DATA   =  2,
+        RLIMIT_FSIZE  =  1,
+        RLIMIT_NOFILE =  8,
+        RLIMIT_STACK  =  3,
+        // RLIMIT_AS is missing on OpenBSD.
+    }
+}
 else version (DragonFlyBSD)
 {
     enum
@@ -540,6 +599,51 @@ else version (CRuntime_UClibc)
         RLIMIT_AS     = 9,
     }
 }
+else version (Haiku)
+{
+    // https://github.com/haiku/haiku/blob/master/headers/posix/sys/resource.h
+    enum
+    {
+        PRIO_PROCESS = 0,
+        PRIO_PGRP    = 1,
+        PRIO_USER    = 2,
+    }
+
+    // rlim_t on Haiku is __haiku_addr_t.
+    alias c_ulong rlim_t; // https://github.com/haiku/haiku/blob/master/headers/config/types.h
+
+    enum : c_ulong
+    {
+        RLIM_INFINITY   = 0xffffffffU,
+        RLIM_SAVED_MAX  = RLIM_INFINITY,
+        RLIM_SAVED_CUR  = RLIM_SAVED_CUR,
+    }
+
+    enum
+    {
+        RUSAGE_SELF     =  0,
+        RUSAGE_CHILDREN = -1,
+    }
+
+    struct rusage
+    {
+        timeval ru_utime;
+        timeval ru_stime;
+    }
+
+    enum
+    {
+        RLIMIT_CORE   =  0,
+        RLIMIT_CPU    =  1,
+        RLIMIT_DATA   =  2,
+        RLIMIT_FSIZE  =  3,
+        RLIMIT_NOFILE =  4,
+        RLIMIT_STACK  =  5,
+        RLIMIT_AS     =  6,
+        /* Haiku-specifics */
+        RLIMIT_NOVMON =  7, /* number of open vnode monitors */
+    }
+}
 else static assert (false, "Unsupported platform");
 
 struct rlimit
@@ -554,6 +658,11 @@ version (CRuntime_Glibc)
     int setpriority(int, id_t, int);
 }
 else version (FreeBSD)
+{
+    int getpriority(int, int);
+    int setpriority(int, int, int);
+}
+else version (OpenBSD)
 {
     int getpriority(int, int);
     int setpriority(int, int, int);
@@ -582,6 +691,12 @@ else version (CRuntime_UClibc)
 {
     int getpriority(int, id_t);
     int setpriority(int, id_t, int);
+}
+else version (Haiku)
+{
+    /* ToDo: The following POSIX calls are missing (in BeOS as well):
+     * int getpriority(int which, id_t who);
+     * int setpriority(int which, id_t who, int priority); */
 }
 
 version (CRuntime_Glibc)
@@ -624,6 +739,12 @@ else version (NetBSD)
     int getrusage(int, rusage*);
     int setrlimit(int, in rlimit*);
 }
+else version (OpenBSD)
+{
+    int getrlimit(int, rlimit*);
+    int getrusage(int, rusage*);
+    int setrlimit(int, in rlimit*);
+}
 else version (DragonFlyBSD)
 {
     int getrlimit(int, rlimit*);
@@ -651,4 +772,10 @@ else version (CRuntime_UClibc)
         int setrlimit(int, in rlimit*);
     }
     int getrusage(int, rusage*);
+}
+else version (Haiku)
+{
+    int getrlimit(int, rlimit*);
+    int getrusage(int, rusage*);
+    int setrlimit(int, in rlimit*);
 }

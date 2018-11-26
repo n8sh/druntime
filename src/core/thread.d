@@ -3206,6 +3206,7 @@ extern (C) @nogc nothrow
     version (CRuntime_Glibc) int pthread_getattr_np(pthread_t thread, pthread_attr_t* attr);
     version (FreeBSD) int pthread_attr_get_np(pthread_t thread, pthread_attr_t* attr);
     version (NetBSD) int pthread_attr_get_np(pthread_t thread, pthread_attr_t* attr);
+    version (OpenBSD) int pthread_attr_get_np(pthread_t thread, pthread_attr_t* attr);
     version (DragonFlyBSD) int pthread_attr_get_np(pthread_t thread, pthread_attr_t* attr);
     version (Solaris) int thr_stksegment(stack_t* stk);
     version (CRuntime_Bionic) int pthread_getattr_np(pthread_t thid, pthread_attr_t* attr);
@@ -3225,6 +3226,7 @@ private void* getStackTop() nothrow @nogc
     else
         static assert(false, "Architecture not supported.");
 }
+
 
 
 private void* getStackBottom() nothrow @nogc
@@ -3285,6 +3287,17 @@ private void* getStackBottom() nothrow @nogc
         version (StackGrowsDown)
             addr += size;
         return addr;
+    }
+    else version (OpenBSD)
+    {
+        pthread_attr_t attr;
+        void* addr; size_t size;
+
+        pthread_attr_init(&attr);
+        pthread_attr_get_np(pthread_self(), &attr);
+        pthread_attr_getstack(&attr, &addr, &size);
+        pthread_attr_destroy(&attr);
+        return addr + size;
     }
     else version (DragonFlyBSD)
     {

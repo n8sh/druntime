@@ -106,6 +106,20 @@ else version (NetBSD)
     if_nameindex_t* if_nameindex();
     void            if_freenameindex(if_nameindex_t*);
 }
+else version (OpenBSD)
+{
+    // https://github.com/openbsd/src/blob/master/sys/net/if.h
+    struct if_nameindex_t
+    {
+        uint    if_index;
+        char*   if_name;
+    }
+
+    uint            if_nametoindex(in char*);
+    char*           if_indextoname(uint, char*);
+    if_nameindex_t* if_nameindex();
+    void            if_freenameindex(if_nameindex_t*);
+}
 else version (DragonFlyBSD)
 {
     struct if_nameindex_t
@@ -137,6 +151,22 @@ else version (CRuntime_UClibc)
     }
 
     enum IF_NAMESIZE = 16;
+
+    uint            if_nametoindex(in char*);
+    char*           if_indextoname(uint, char*);
+    if_nameindex_t* if_nameindex();
+    void            if_freenameindex(if_nameindex_t*);
+}
+else version (Haiku)
+{
+    // https://github.com/haiku/haiku/blob/master/headers/posix/net/if.h
+    struct if_nameindex_t
+    {
+        uint    if_index;
+        char*   if_name;
+    }
+
+    enum IF_NAMESIZE = 32;
 
     uint            if_nametoindex(in char*);
     char*           if_indextoname(uint, char*);

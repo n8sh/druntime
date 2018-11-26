@@ -147,6 +147,17 @@ else version (CRuntime_Musl)
         char**  gr_mem;
     }
 }
+else version (Haiku)
+{
+    // https://github.com/haiku/haiku/blob/master/headers/posix/grp.h
+    struct group
+    {
+        char*   gr_name;
+        char*   gr_passwd;
+        gid_t   gr_gid;
+        char**  gr_mem;
+    }
+}
 else
 {
     static assert(false, "Unsupported platform");
@@ -207,6 +218,11 @@ else version (CRuntime_UClibc)
     int getgrgid_r(gid_t, group*, char*, size_t, group**);
 }
 else version (CRuntime_Musl)
+{
+    int getgrnam_r(in char*, group*, char*, size_t, group**);
+    int getgrgid_r(gid_t, group*, char*, size_t, group**);
+}
+else version (Haiku)
 {
     int getgrnam_r(in char*, group*, char*, size_t, group**);
     int getgrgid_r(gid_t, group*, char*, size_t, group**);
@@ -277,6 +293,12 @@ else version (CRuntime_UClibc)
     @trusted void setgrent();
 }
 else version (CRuntime_Musl)
+{
+    group* getgrent();
+    @trusted void endgrent();
+    @trusted void setgrent();
+}
+else version (Haiku)
 {
     group* getgrent();
     @trusted void endgrent();

@@ -133,6 +133,11 @@ else version (CRuntime_UClibc)
 {
     int posix_memalign(void**, size_t, size_t);
 }
+else version (Haiku)
+{
+    // https://github.com/haiku/haiku/blob/master/headers/posix/stdlib.h
+    int posix_memalign(void**, size_t, size_t);
+}
 
 //
 // C Extension (CX)
@@ -209,6 +214,12 @@ else version (CRuntime_UClibc)
     int unsetenv(in char*);
     void* valloc(size_t);
 }
+else version (Haiku)
+{
+    int setenv(in char*, in char*, int);
+    int unsetenv(in char*);
+    void* valloc(size_t); //https://github.com/haiku/haiku/blob/master/headers/posix/malloc.h
+}
 
 //
 // Thread-Safe Functions (TSF)
@@ -246,6 +257,10 @@ else version (Solaris)
     int rand_r(uint*);
 }
 else version (CRuntime_UClibc)
+{
+    int rand_r(uint*);
+}
+else version (Haiku)
 {
     int rand_r(uint*);
 }
@@ -677,4 +692,36 @@ else version (CRuntime_UClibc)
   {
     int    mkstemp(char*);
   }
+}
+else version (Haiku)
+{
+    c_long a64l(in char*);
+    double drand48();
+    char*  ecvt(double, int, int *, int *); // LEGACY
+    double erand48(ref ushort[3]);
+    char*  fcvt(double, int, int *, int *); // LEGACY
+    char*  gcvt(double, int, char*); // LEGACY
+    int    getsubopt(char**, in char**, char**);
+    int    grantpt(int);
+    char*  initstate(uint, char*, size_t);
+    c_long jrand48(ref ushort[3]);
+    char*  l64a(c_long);
+    void   lcong48(ref ushort[7]);
+    c_long lrand48();
+    char*  mktemp(char*); // LEGACY
+    int    mkstemp(char*);
+    int    mkdtemp(char*); // Defined in IEEE 1003.1, 2008 Edition
+    c_long mrand48();
+    c_long nrand48(ref ushort[3]);
+    int    posix_openpt(int);
+    char*  ptsname(int);
+    int    putenv(char*);
+    int    random();
+    char*  realpath(in char*, char*);
+    ushort* seed48(ref ushort[3]);
+    void   setkey(in char*);
+    char*  setstate(in char*); // FIXME: Not `const` in the header! Is it okay to assume it is?
+    void   srand48(c_long);
+    void   srandom(uint);
+    int    unlockpt(int);
 }

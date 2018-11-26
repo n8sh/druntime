@@ -61,6 +61,8 @@ int posix_spawnattr_getpgroup(const posix_spawnattr_t*, pid_t*);
 
 version (Darwin)
 { } // Not supported
+else version (Haiku)
+{ } // Not supported
 else
 {
     int posix_spawnattr_getschedparam(const posix_spawnattr_t*, sched_param*);
@@ -365,6 +367,23 @@ else version (Solaris)
         int posix_spawnattr_getsigignore_np(const posix_spawnattr_t* attr, sigset_t* sigignore);
         int posix_spawnattr_setsigignore_np(posix_spawnattr_t* attr, const sigset_t* sigignore);
     }
+}
+else version (Haiku)
+{
+    // https://github.com/haiku/haiku/blob/master/headers/posix/spawn.h
+    enum
+    {
+        POSIX_SPAWN_RESETIDS        = 0x01,
+        POSIX_SPAWN_SETPGROUP       = 0x02,
+        //POSIX_SPAWN_SETSCHEDPARAM   = 0x04,
+        //POSIX_SPAWN_SETSCHEDULER    = 0x08,
+        POSIX_SPAWN_SETSIGDEF       = 0x10,
+        POSIX_SPAWN_SETSIGMASK      = 0x20,
+    }
+    alias posix_spawnattr_t = _posix_spawnattr*;
+    alias posix_spawn_file_actions_t = _posix_spawn_file_actions*;
+    struct _posix_spawnattr;
+    struct _posix_spawn_file_actions;
 }
 else
     static assert(0, "Unsupported OS");

@@ -46,6 +46,10 @@ private
   {
     import core.sys.posix.sys.types;
   }
+  version (Haiku)
+  {
+    import core.sys.posix.sys.types;
+  }
 }
 
 extern (C):
@@ -371,6 +375,19 @@ else version (CRuntime_UClibc)
         L_tmpnam     = 20
     }
 }
+else version (Haiku)
+{
+    // https://github.com/haiku/haiku/blob/master/headers/posix/stdio.h
+    enum
+    {
+        BUFSIZ       = 8192,  ///
+        EOF          = -1,    ///
+        FOPEN_MAX    = 128,   ///
+        FILENAME_MAX = 256,   ///
+        TMP_MAX      = 32768, ///
+        L_tmpnam     = 512,   ///
+    }
+}
 else
 {
     static assert( false, "Unsupported platform" );
@@ -642,6 +659,8 @@ else version (OpenBSD)
     }
 
     ///
+    alias __sFILE _iobuf;
+    ///
     alias shared(__sFILE) FILE;
 }
 else version (DragonFlyBSD)
@@ -802,6 +821,69 @@ else version (CRuntime_UClibc)
     alias __STDIO_FILE_STRUCT _iobuf;
     ///
     alias shared(__STDIO_FILE_STRUCT) FILE;
+}
+else version (Haiku)
+{
+    // https://github.com/haiku/haiku/blob/master/headers/posix/libio.h
+    struct _IO_marker
+    {
+        _IO_marker*  _next;
+        _IO_FILE*    _sbuf;
+        int          _pos;
+    }
+
+    ///
+    struct _IO_FILE
+    {
+        int _flags; /* High-order word is _IO_MAGIC; rest is flags. */
+        /* The following pointers correspond to the C++ streambuf protocol. */
+        /* Note:  Tk uses the _IO_read_ptr and _IO_read_end fields directly. */
+        char* _IO_read_ptr;   /* Current read pointer */
+        char* _IO_read_end;   /* End of get area. */
+        char* _IO_read_base;  /* Start of putback+get area. */
+        char* _IO_write_base; /* Start of put area. */
+        char* _IO_write_ptr;  /* Current put pointer. */
+        char* _IO_write_end;  /* End of put area. */
+        char* _IO_buf_base;   /* Start of reserve area. */
+        char* _IO_buf_end;    /* End of reserve area. */
+        /* The following fields are used to support backing up and undo. */
+        char* _IO_save_base;    /* Pointer to start of non-current get area. */
+        char* _IO_backup_base;  /* Pointer to first valid character of backup area */
+        char* _IO_save_end;     /* Pointer to end of non-current get area. */
+
+        _IO_marker* _markers;
+        _IO_FILE*   _chain;
+
+        int     _fileno;
+    /*  int     _blksize; */
+        int     _flags2;
+        off_t   _old_offset; /* This used to be _offset but it's too small. */
+            /* -> not true on BeOS, but who cares */
+        /* 1+column number of pbase(); 0 is unknown. */
+        ushort   _cur_column;
+        byte     _vtable_offset;
+        ubyte[1] _shortbuf;
+
+        void* _lock;
+
+        off_t   _offset;
+    /* #if defined _LIBC || defined _GLIBCPP_USE_WCHAR_T */
+        /* Wide character stream stuff.  */
+        void* _codecvt;
+        void* _wide_data;
+    /* #else
+     *  void    *__pad1;
+     *  void    *__pad2;
+     * #endif */
+        int _mode;
+        /* Make sure we don't get into trouble again.  */
+        ubyte[15 * int.sizeof - 2 * (void*).sizeof] _unused2;
+    }
+
+    ///
+    alias _IO_FILE _iobuf;
+    ///
+    alias shared(_IO_FILE) FILE;
 }
 else
 {
@@ -1018,14 +1100,16 @@ else version (OpenBSD)
         _IONBF = 2,
     }
 
-    private extern shared FILE[] __sF;
-
+    private extern shared FILE[3] __sF;
+    @property auto __stdin()() { return &__sF[0]; }
+    @property auto __stdout()() { return &__sF[1]; }
+    @property auto __stderr()() { return &__sF[2]; }
     ///
-    shared stdin  = &__sF[0];
+    alias __stdin stdin;
     ///
-    shared stdout = &__sF[1];
+    alias __stdout stdout;
     ///
-    shared stderr = &__sF[2];
+    alias __stderr stderr;
 }
 else version (DragonFlyBSD)
 {
@@ -1134,6 +1218,19 @@ else version (CRuntime_UClibc)
     extern shared FILE* stdout;
     ///
     extern shared FILE* stderr;
+}
+else version (Haiku)
+{
+    enum
+    {
+        _IOFBF = 0, ///
+        _IOLBF = 1, ///
+        _IONBF = 2, ///
+    }
+
+    extern shared FILE* stdin;  ///
+    extern shared FILE* stdout; ///
+    extern shared FILE* stderr; ///
 }
 else
 {
@@ -1704,6 +1801,23 @@ else version (CRuntime_UClibc)
     pure int  ferror(FILE* stream);
     ///
     int  fileno(FILE *);
+  }
+
+    ///
+    int  snprintf(scope char* s, size_t n, scope const char* format, ...);
+    ///
+    int  vsnprintf(scope char* s, size_t n, scope const char* format, va_list arg);
+}
+else version (Haiku)
+{
+  // No unsafe pointer manipulation.
+  @trusted
+  {
+    void rewind(FILE*); ///
+    pure void clearerr(FILE*); ///
+    pure int  feof(FILE*); ///
+    pure int  ferror(FILE*); ///
+    int  fileno(FILE*); ///
   }
 
     ///

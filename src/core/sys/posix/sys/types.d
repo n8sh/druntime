@@ -177,6 +177,26 @@ else version (NetBSD)
     alias c_long      time_t;
     alias uint        uid_t;
 }
+else version (OpenBSD)
+{
+    // https://github.com/openbsd/src/blob/master/sys/sys/types.h
+    // https://github.com/openbsd/src/blob/master/sys/sys/_types.h
+    alias long      blkcnt_t;   /* blocks allocated for file */
+    alias int       blksize_t;  /* optimal blocksize for I/O */
+    alias int       dev_t;      /* device number */
+    alias uint      gid_t;      /* group id */
+    alias ulong     ino_t;      /* inode number */
+    alias uint      mode_t;     /* permissions */
+    alias uint      nlink_t;    /* link count */
+    alias long      off_t;      /* file offset or size */
+    alias int       pid_t;      /* process id */
+    // ssize_t is defined as c_long for every architecture.
+    alias c_long    ssize_t;
+    alias long      time_t;
+    alias uint      uid_t;
+
+    alias char* caddr_t;
+}
 else version (DragonFlyBSD)
 {
     alias long      blkcnt_t;
@@ -295,6 +315,29 @@ else version (CRuntime_UClibc)
     alias slong_t   time_t;
     alias uint      uid_t;
 }
+else version (Haiku)
+{
+    // https://github.com/haiku/haiku/blob/master/headers/posix/sys/types.h
+    // https://github.com/haiku/haiku/blob/master/headers/config/types.h
+    alias long      blkcnt_t;
+    alias int       blksize_t;
+    alias int       dev_t;
+    alias uint      gid_t;
+    alias long      ino_t;
+    alias uint      mode_t;
+    alias uint      umode_t;
+    alias int       nlink_t;
+    alias long      off_t;
+    alias int       pid_t;
+    // https://github.com/haiku/haiku/blob/master/headers/posix/size_t.h
+    alias c_long    ssize_t;
+    // https://github.com/haiku/haiku/blob/master/headers/posix/time.h
+    version (X86)
+        alias int32 time_t;
+    else
+        alias long time_t;
+    alias uint      uid_t;
+}
 else
 {
     static assert(false, "Unsupported platform");
@@ -357,6 +400,16 @@ else version (NetBSD)
     alias ulong     fsfilcnt_t;
     alias c_long    clock_t;
     alias long      id_t;
+    alias c_long    key_t;
+    alias c_long    suseconds_t;
+    alias uint      useconds_t;
+}
+else version (OpenBSD)
+{
+    alias ulong     fsblkcnt_t;
+    alias ulong     fsfilcnt_t;
+    alias long      clock_t;
+    alias uint      id_t;
     alias c_long    key_t;
     alias c_long    suseconds_t;
     alias uint      useconds_t;
@@ -438,6 +491,16 @@ else version (CRuntime_UClibc)
     alias uint      id_t;
     alias int       key_t;
     alias slong_t   suseconds_t;
+    alias uint      useconds_t;
+}
+else version (Haiku)
+{
+    alias long      fsblkcnt_t;
+    alias long      fsfilcnt_t;
+    alias int       clock_t;
+    alias int       id_t;
+    alias int       key_t;
+    alias int       suseconds_t;
     alias uint      useconds_t;
 }
 else
@@ -934,6 +997,25 @@ else version (NetBSD)
     alias uint pthread_key_t;
     alias void* pthread_t;
 }
+else version (OpenBSD)
+{
+    alias void* pthread_attr_t;
+    alias void* pthread_cond_t;
+    alias void* pthread_condattr_t;
+    alias int   pthread_key_t;
+    alias void* pthread_mutex_t;
+    alias void* pthread_mutexattr_t;
+    // pthread_once_t defined below.
+    alias void* pthread_rwlock_t;
+    alias void* pthread_rwlockattr_t;
+    alias void* pthread_t;
+
+    struct pthread_once_t
+    {
+        int state;
+        pthread_mutex_t mutex;
+    }
+}
 else version (DragonFlyBSD)
 {
     alias int lwpid_t;
@@ -1232,6 +1314,67 @@ else version (CRuntime_UClibc)
     }
 
     alias c_ulong pthread_t;
+
+}
+else version (Haiku)
+{
+    alias void* pthread_attr_t;
+    // pthread_cond_t defined below.
+    alias void* pthread_condattr_t;
+    alias int pthread_key_t;
+    // pthread_mutex_t defined below.
+    alias void* pthread_mutexattr_t;
+    // pthread_once_t defined below.
+    // pthread_rwlock_t defined below.
+    alias void* pthread_rwlockattr_t;
+    alias void* pthread_t;
+
+    struct pthread_cond_t
+    {
+        uint                flags;
+        int                 unused;
+        pthread_mutex_t*    mutex;
+        int                 waiter_count;
+        int                 lock;
+    }
+
+    struct pthread_mutex_t
+    {
+        uint flags;
+        int  lock;
+        int  unused;
+        int  owner;
+        int  owner_count;
+    }
+
+    struct pthread_once_t
+    {
+        int32 state;
+    }
+
+    struct pthread_rwlock_t
+    {
+        uint  flags;
+        int   owner;
+        static union pthread_rwlock_u_t
+        {
+            static struct pthread_rwlock_local_t
+            {
+                int      mutex;
+                int      unused;
+                int      reader_count;
+                int      writer_count;
+                void*[2] waiters;
+            };
+            static struct pthread_rwlock_shared_t
+            {
+                int sem;
+            }
+            pthread_rwlock_local_t local;
+            pthread_rwlock_shared_t shared_;
+        }
+        pthread_rwlock_u_t u;
+    }
 }
 else
 {
@@ -1266,6 +1409,11 @@ else version (FreeBSD)
     alias void* pthread_barrierattr_t;
 }
 else version (NetBSD)
+{
+    alias void* pthread_barrier_t;
+    alias void* pthread_barrierattr_t;
+}
+else version (OpenBSD)
 {
     alias void* pthread_barrier_t;
     alias void* pthread_barrierattr_t;
@@ -1315,6 +1463,19 @@ else version (CRuntime_UClibc)
         int __align;
     }
 }
+else version (Haiku)
+{
+    struct _pthread_barrier_t
+    {
+        uint  flags;
+        int   lock;
+        int   mutex;
+        int   waiter_count;
+        int   waiter_max;
+    }
+
+    alias void* pthread_barrierattr_t;
+}
 else
 {
     static assert(false, "Unsupported platform");
@@ -1339,6 +1500,10 @@ else version (NetBSD)
 {
     //already defined
 }
+else version (OpenBSD)
+{
+    alias void* pthread_spinlock_t;
+}
 else version (DragonFlyBSD)
 {
     alias void* pthread_spinlock_t;
@@ -1350,6 +1515,13 @@ else version (Solaris)
 else version (CRuntime_UClibc)
 {
     alias int pthread_spinlock_t; // volatile
+}
+else version (Haiku)
+{
+    struct pthread_spinlock_t
+    {
+        int lock;
+    }
 }
 
 //

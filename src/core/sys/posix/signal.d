@@ -232,6 +232,31 @@ else version (CRuntime_UClibc)
         return __libc_current_sigrtmax();
     }
 }
+else version (Haiku)
+{
+    // https://github.com/haiku/haiku/blob/master/headers/posix/signal.h
+    private extern (C) nothrow @nogc
+    {
+        int __signal_get_sigrtmin();
+        int __signal_get_sigrtmax();
+    }
+
+    @property int SIGRTMIN() nothrow @nogc
+    {
+        __gshared static int sig = -1;
+        if (sig == -1)
+            sig = __signal_get_sigrtmin();
+        return sig;
+    }
+
+    @property int SIGRTMAX() nothrow @nogc
+    {
+        __gshared static int sig = -1;
+        if (sig == -1)
+            sig = __signal_get_sigrtmax();
+        return sig;
+    }
+}
 
 version (linux)
 {
@@ -568,6 +593,30 @@ else version (Solaris)
     enum SIGUSR2 = 17;
     enum SIGURG = 21;
 }
+else version (Haiku)
+{
+    //SIGABRT (defined in core.stdc.signal)
+    enum SIGALRM    = 14;
+    enum SIGBUS     = 30;
+    enum SIGCHLD    = 5;
+    enum SIGCONT    = 12;
+    //SIGFPE (defined in core.stdc.signal)
+    enum SIGHUP     = 1;
+    //SIGILL (defined in core.stdc.signal)
+    //SIGINT (defined in core.stdc.signal)
+    enum SIGKILL    = 9;
+    enum SIGPIPE    = 7;
+    enum SIGQUIT    = 3;
+    //SIGSEGV (defined in core.stdc.signal)
+    enum SIGSTOP    = 10;
+    //SIGTERM (defined in core.stdc.signal)
+    enum SIGTSTP    = 13;
+    enum SIGTTIN    = 16;
+    enum SIGTTOU    = 17;
+    enum SIGUSR1    = 18;
+    enum SIGUSR2    = 19;
+    enum SIGURG     = 26;
+}
 else
 {
     static assert(false, "Unsupported platform");
@@ -793,6 +842,24 @@ else version (Darwin)
         sigset_t        sa_mask;
         int             sa_flags;
     }
+}
+else version (Haiku)
+{
+    alias sigfn_t sighandler_t;
+    alias sigactfn_t siginfo_handler_t;
+
+    struct sigaction
+    {
+        union
+        {
+            sighandler_t sa_handler;
+            siginfo_handler_t sa_sigaction;
+        }
+        sigset_t sa_mask;
+        int      sa_flags;
+        void*    sa_userdata;
+    }
+    alias sigaction sigaction_t; // Not called this in Haiku.
 }
 else
 {
@@ -1911,6 +1978,51 @@ else version (CRuntime_UClibc)
     int sigfillset(sigset_t*);
     int sigismember(in sigset_t*, int);
     int sigpending(sigset_t*);
+    int sigprocmask(int, in sigset_t*, sigset_t*);
+    int sigsuspend(in sigset_t*);
+    int sigwait(in sigset_t*, int*);
+}
+else version (Haiku)
+{
+    enum SIG_HOLD = cast(sighandler_t) 3;
+
+    alias ulong sigset_t;
+
+    enum SA_NOCLDSTOP = 0x01;
+
+    enum SIG_BLOCK = 1;
+    enum SIG_UNBLOCK = 2;
+    enum SIG_SETMASK = 3;
+
+    struct siginfo_t
+    {
+        int             si_signo;   /* signal number */
+        int             si_code;    /* signal code */
+        int             si_errno;   /* if non zero, an error number associated with
+                                       this signal */
+        pid_t           si_pid;     /* sending process ID */
+        uid_t           si_uid;     /* real user ID of sending process */
+        void*           si_addr;    /* address of faulting instruction */
+        int             si_status;  /* exit value or signal */
+        c_long          si_band;    /* band event for SIGPOLL */
+        sigval          si_value;   /* signal value */
+    }
+
+    enum SI_USER         = 0;   /* signal sent by user */
+    enum SI_QUEUE        = 1;   /* signal sent by sigqueue() */
+    enum SI_TIMER        = 2;   /* signal sent on timer_settime() timeout */
+    enum SI_ASYNCIO      = 3;   /* signal sent on asynchronous I/O completion */
+    enum SI_MESGQ        = 4;   /* signal sent on arrival of message on empty
+                                   message queue */
+
+    int kill(pid_t, int);
+    int sigaction(int, in sigaction_t*, sigaction_t*);
+    int sigaddset(sigset_t*, int);
+    int sigdelset(sigset_t*, int);
+    int sigemptyset(sigset_t *);
+    int sigfillset(sigset_t *);
+    int sigismember(in sigset_t *, int);
+    int sigpending(sigset_t *);
     int sigprocmask(int, in sigset_t*, sigset_t*);
     int sigsuspend(in sigset_t*);
     int sigwait(in sigset_t*, int*);
@@ -3214,6 +3326,129 @@ else version (CRuntime_UClibc)
     int sigpause(int);
     int sigrelse(int);
 }
+else version (Haiku)
+{
+    enum SIGPOLL        = 23;
+    enum SIGPROF        = 24;
+    enum SIGSYS         = 25;
+    enum SIGTRAP        = 22;
+    enum SIGVTALRM      = 27;
+    enum SIGXCPU        = 28;
+    enum SIGXFSZ        = 29;
+
+    enum
+    {
+        SA_NOCLDWAIT    = 0x02,
+        SA_RESETHAND    = 0x04,
+        SA_NODEFER      = 0x08,
+        SA_RESTART      = 0x10,
+        SA_ONSTACK      = 0x20,
+        SA_SIGINFO      = 0x40,
+        SA_NOMASK       = SA_NODEFER,
+        SA_STACK        = SA_ONSTACK,
+        SA_ONESHOT      = SA_RESETHAND,
+    }
+
+    enum
+    {
+        SS_ONSTACK = 0x1,
+        SS_DISABLE = 0x2,
+    }
+
+    enum MINSIGSTKSZ = 8192;
+    enum SIGSTKSZ    = 16384;
+;
+    //ucontext_t (defined in core.sys.posix.ucontext)
+    //mcontext_t (defined in core.sys.posix.ucontext)
+
+    struct stack_t
+    {
+        void*   ss_sp;
+        int     ss_flags;
+        size_t  ss_size;
+    }
+
+    // No sigstack.
+
+    enum
+    {
+        ILL_ILLOPC      = 10,
+        ILL_ILLOPN      = 11,
+        ILL_ILLADR      = 12,
+        ILL_ILLTRP      = 13,
+        ILL_PRVOPC      = 14,
+        ILL_PRVREG      = 15,
+        ILL_COPROC      = 16,
+        ILL_BADSTK      = 17,
+    }
+
+    enum
+    {
+        FPE_INTDIV      = 20,
+        FPE_INTOVF      = 21,
+        FPE_FLTDIV      = 22,
+        FPE_FLTOVF      = 23,
+        FPE_FLTUND      = 24,
+        FPE_FLTRES      = 25,
+        FPE_FLTINV      = 26,
+        FPE_FLTSUB      = 27,
+    }
+
+    enum
+    {
+        SEGV_MAPERR = 30,
+        SEGV_ACCERR = 31,
+    }
+
+    enum
+    {
+        BUS_ADRALN = 40,
+        BUS_ADRERR = 41,
+        BUS_OBJERR = 42,
+    }
+
+    enum
+    {
+        TRAP_BRKPT = 50,
+        TRAP_TRACE = 51,
+    }
+
+    enum
+    {
+        CLD_EXITED    = 60,
+        CLD_KILLED    = 61,
+        CLD_DUMPED    = 62,
+        CLD_TRAPPED   = 63,
+        CLD_STOPPED   = 64,
+        CLD_CONTINUED = 65,
+    }
+
+    enum
+    {
+        POLL_IN  = 70,
+        POLL_OUT = 71,
+        POLL_MSG = 72,
+        POLL_ERR = 73,
+        POLL_PRI = 74,
+        POLL_HUP = 75,
+    }
+
+    //No bsd_signal function.
+    sigfn_t sigset(int sig, sigfn_t func);
+
+  nothrow:
+  @nogc:
+    //No bsd_signal function.
+    sigfn_t2 sigset(int sig, sigfn_t2 func);
+
+    int killpg(pid_t, int);
+    int sigaltstack(in stack_t*, stack_t*);
+    int sighold(int);
+    int sigignore(int);
+    int siginterrupt(int, int);
+    int sigpause(int);
+    int sigrelse(int);
+}
 else
 {
     static assert(false, "Unsupported platform");
@@ -3290,6 +3525,14 @@ else version (Solaris)
     }
 
     alias timespec timestruc_t;
+}
+else version (Haiku)
+{
+    struct timespec
+    {
+        time_t tv_sec;
+        c_long tv_nsec;
+    }
 }
 else
 {
@@ -3525,6 +3768,21 @@ else version (CRuntime_UClibc)
     int sigtimedwait(in sigset_t*, siginfo_t*, in timespec*);
     int sigwaitinfo(in sigset_t*, siginfo_t*);
 }
+else version (Haiku)
+{
+    struct sigevent
+    {
+        int             sigev_notify;
+        int             sigev_signo;
+        sigval          sigev_value;
+        void function(sigval) sigev_notify_function;
+        pthread_attr_t* sigev_notify_attributes;
+    }
+
+    int sigqueue(pid_t, int, in sigval);
+    int sigtimedwait(in sigset_t*, siginfo_t*, in timespec*);
+    int sigwaitinfo(in sigset_t*, siginfo_t*);
+}
 else
 {
     static assert(false, "Unsupported platform");
@@ -3588,6 +3846,11 @@ else version (CRuntime_UClibc)
     int pthread_kill(pthread_t, int);
     int pthread_sigmask(int, in sigset_t*, sigset_t*);
     int pthread_sigqueue(pthread_t, int, sigval);
+}
+else version (Haiku)
+{
+    int pthread_kill(pthread_t, int);
+    int pthread_sigmask(int, in sigset_t*, sigset_t*);
 }
 else
 {

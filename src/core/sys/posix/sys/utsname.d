@@ -89,6 +89,22 @@ else version (NetBSD)
 
     int uname(utsname* __name);
 }
+else version (OpenBSD)
+{
+    // https://github.com/openbsd/src/blob/master/sys/sys/utsname.h
+    private enum SYS_NMLN = 256;
+
+    struct utsname
+    {
+        char[SYS_NMLN] sysname  = 0;  /* Name of this OS. */
+        char[SYS_NMLN] nodename = 0;  /* Name of this network node. */
+        char[SYS_NMLN] release  = 0;  /* Release level. */
+        char[SYS_NMLN] version_ = 0;  /* Version level. */
+        // TODO Deprecate after version_ has been in an official release.
+        alias update = version_;
+        char[SYS_NMLN] machine  = 0;  /* Hardware type. */
+    };
+}
 else version (DragonFlyBSD)
 {
     private enum utsNameLength = 32;
@@ -170,6 +186,22 @@ else version (CRuntime_UClibc)
     }
 
     int uname(utsname*);
+}
+else version (Haiku)
+{
+    // https://github.com/haiku/haiku/blob/master/headers/posix/sys/utsname.h
+    private enum _SYS_NAMELEN = 32;
+
+    struct utsname
+    {
+        char[_SYS_NAMELEN] sysname = 0;
+        char[_SYS_NAMELEN] nodename = 0;
+        char[_SYS_NAMELEN] release = 0;
+        char[_SYS_NAMELEN] version_ = 0;
+        // TODO Deprecate after version_ has been in an official release.
+        alias update = version_;
+        char[_SYS_NAMELEN] machine = 0;
+    }
 }
 else
 {

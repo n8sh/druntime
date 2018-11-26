@@ -364,6 +364,36 @@ else version (CRuntime_UClibc)
     alias _setjmp setjmp;
     void longjmp(ref jmp_buf, int);
 }
+else version (Haiku)
+{
+    version (MIPS32) version (LittleEndian) version = MIPS32LittleEndian;
+
+    version (X86)
+        alias int[6] jmp_buf; //https://github.com/haiku/haiku/blob/master/headers/posix/arch/x86/arch_setjmp.h
+    else version (X86_64)
+        alias c_ulong[8] jmp_buf; //https://github.com/haiku/haiku/blob/master/headers/posix/arch/x86_64/arch_setjmp.h
+    else version (ARM)
+        alias int[(15+2)*4] __jmp_buf; //https://github.com/haiku/haiku/blob/master/headers/posix/arch/arm/arch_setjmp.h
+    else version (AArch64)
+        static assert(0, "No arch_setjmp.h for Haiku on AArch64");
+    //else version (M68k) // No corresponding D version.
+    //    alias int[7+6+2+8*((96/8)/4)] __jmp_buf;
+    else version (MIPS32LittleEndian)
+        alias int[42] __jmp_buf; //https://github.com/haiku/haiku/blob/master/headers/posix/arch/mipsel/arch_setjmp.h
+    else version (PPC)
+        alias int[23] __jmpbuf; //https://github.com/haiku/haiku/blob/master/headers/posix/arch/ppc/arch_setjmp.h
+    else
+        static assert(0, "No arch_setjmp.h for Haiku on target architecture");
+    //https://github.com/haiku/haiku/blob/master/headers/posix/setjmp.h
+    struct __jmp_buf_tag
+    {
+        __jmp_buf   regs;
+        sigset_t    inverted_signal_mask;
+    }
+    alias __jmp_buf_tag[1] jmp_buf;
+    int setjmp(ref jmp_buf);
+    void longjmp(ref jmp_buf, int);
+}
 
 //
 // C Extension (CX)
@@ -470,6 +500,12 @@ else version (CRuntime_UClibc)
     alias __sigsetjmp sigsetjmp;
     void siglongjmp(ref sigjmp_buf, int);
 }
+else version (Haiku)
+{
+    alias jmp_buf sigjmp_buf;
+    int sigsetjmp(ref sigjmp_buf, int);
+    void siglongjmp(ref sigjmp_buf, int);
+}
 
 //
 // XOpen (XSI)
@@ -510,6 +546,11 @@ else version (CRuntime_Bionic)
     void _longjmp(ref jmp_buf, int);
 }
 else version (CRuntime_UClibc)
+{
+    int  _setjmp(ref jmp_buf);
+    void _longjmp(ref jmp_buf, int);
+}
+else version (Haiku)
 {
     int  _setjmp(ref jmp_buf);
     void _longjmp(ref jmp_buf, int);

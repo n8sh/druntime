@@ -89,6 +89,11 @@ SRCS=\
 	src\core\sys\freebsd\time.d \
 	src\core\sys\freebsd\unistd.d \
 	\
+	src\core\sys\openbsd\dlfcn.d \
+	src\core\sys\openbsd\execinfo.d \
+	src\core\sys\openbsd\sys\exec_elf.d \
+	src\core\sys\openbsd\sys\link_elf.d \
+	\
 	src\core\sys\dragonflybsd\dlfcn.d \
 	src\core\sys\dragonflybsd\execinfo.d \
 	src\core\sys\dragonflybsd\netinet\in_.d \

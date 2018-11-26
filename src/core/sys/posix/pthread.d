@@ -435,6 +435,44 @@ else version (CRuntime_UClibc)
         PTHREAD_PROCESS_SHARED
     }
 }
+else version (Haiku)
+{
+    //https://github.com/haiku/haiku/blob/master/headers/posix/pthread.h
+    enum
+    {
+        PTHREAD_CANCEL_ENABLE  = 0,
+        PTHREAD_CANCEL_DISABLE = 1,
+    }
+
+    enum
+    {
+        PTHREAD_CANCEL_DEFERRED     = 0,
+        PTHREAD_CANCEL_ASYNCHRONOUS = 2,
+    }
+
+    enum PTHREAD_CANCELED = cast(void*) -1;
+
+    enum
+    {
+        PTHREAD_DETACHED            = 0x1,
+        PTHREAD_INHERIT_SCHED       = 0x4,
+        PTHREAD_NOFLOAT             = 0x8,
+
+        PTHREAD_CREATE_DETACHED     = PTHREAD_DETACHED,
+        PTHREAD_CREATE_JOINABLE     = 0,
+        PTHREAD_EXPLICIT_SCHED      = 0,
+    }
+
+    enum pthread_cond_t PTHREAD_COND_INITIALIZER = { 0, -42, null, 0, 0 };
+    enum pthread_mutex_t PTHREAD_MUTEX_INITIALIZER = { PTHREAD_MUTEX_DEFAULT, 0, -42, -1, 0 };
+    enum pthread_once_t PTHREAD_ONCE_INIT = {-1};
+
+    enum
+    {
+        PTHREAD_PROCESS_PRIVATE = 0,
+        PTHREAD_PROCESS_SHARED  = 1,
+    }
+}
 else
 {
     static assert(false, "Unsupported platform");
@@ -707,6 +745,71 @@ else version (CRuntime_UClibc)
         }
     }
 }
+else version (Haiku)
+{
+    struct __pthread_cleanup_handler
+    {
+        __pthread_cleanup_handler* previous;
+        _pthread_cleanup_routine function_;
+        void* argument;
+    }
+
+    void __pthread_cleanup_push_handler(__pthread_cleanup_handler*);
+    __pthread_cleanup_handler* __pthread_cleanup_pop_handler();
+
+
+    struct pthread_cleanup
+    {
+        extern(D)
+        {
+            private static __pthread_cleanup_handler[2] stack;
+
+            void push()(_pthread_cleanup_routine routine, void* arg)
+            {
+                routine || assert(0, "pthread_cleanup_push null routine");
+                __pthread_cleanup_handler* handler;
+                // Try to use thread-local stack to avoid allocation.
+                // Because the stack is small looping through the entire thing is efficient.
+                foreach (ref h; stack)
+                {
+                    if (h.routine is null)
+                    {
+                        handler = &h;
+                        goto handler_is_set;
+                    }
+                }
+                // Allocate new. The memory will not be scanned by the garbage collector!
+                import core.stdc.stdlib : calloc;
+                import core.exception : onOutOfMemoryError;
+                handler = cast(__pthread_cleanup_handler*) malloc(__pthread_cleanup_handler.sizeof);
+                if (!handler) onOutOfMemoryError();
+            handler_is_set:
+                handler.previous = null;
+                handler.function_ = routine;
+                handler.argument = arg;
+                __pthread_cleanup_push_handler(handler);
+            }
+
+            void pop()(int execute)
+            {
+                auto handler = __pthread_cleanup_pop_handler();
+                assert(handler, "pthread_cleanup_pop not matched with pthread_cleanup_push");
+                if (execute)
+                    handler.function_(handler.argument);
+                *handler = __pthread_cleanup_pop_handler.init;
+                // Check if the handler was not allocated with malloc.
+                // Because the stack is small looping through the entire thing is efficient.
+                foreach_reverse (ref h; stack)
+                {
+                    if (handler is &h)
+                        return;
+                }
+                import core.stdc.stdlib : free;
+                free(handler);
+            }
+        }
+    }
+}
 else
 {
     static assert(false, "Unsupported platform");
@@ -868,6 +971,18 @@ else version (CRuntime_UClibc)
     int pthread_barrierattr_init(pthread_barrierattr_t*);
     int pthread_barrierattr_setpshared(pthread_barrierattr_t*, int);
 }
+else version (Haiku)
+{
+    enum PTHREAD_BARRIER_SERIAL_THREAD = -1;
+
+    int pthread_barrier_destroy(pthread_barrier_t*);
+    int pthread_barrier_init(pthread_barrier_t*, in pthread_barrierattr_t*, uint);
+    int pthread_barrier_wait(pthread_barrier_t*);
+    int pthread_barrierattr_destroy(pthread_barrierattr_t*);
+    int pthread_barrierattr_getpshared(in pthread_barrierattr_t*, int*);
+    int pthread_barrierattr_init(pthread_barrierattr_t*);
+    int pthread_barrierattr_setpshared(pthread_barrierattr_t*, int);
+}
 else
 {
     static assert(false, "Unsupported platform");
@@ -951,6 +1066,14 @@ else version (CRuntime_Musl)
 
 }
 else version (CRuntime_UClibc)
+{
+    int pthread_spin_destroy(pthread_spinlock_t*);
+    int pthread_spin_init(pthread_spinlock_t*, int);
+    int pthread_spin_lock(pthread_spinlock_t*);
+    int pthread_spin_trylock(pthread_spinlock_t*);
+    int pthread_spin_unlock(pthread_spinlock_t*);
+}
+else version (Haiku)
 {
     int pthread_spin_destroy(pthread_spinlock_t*);
     int pthread_spin_init(pthread_spinlock_t*, int);
@@ -1144,6 +1267,23 @@ else version (CRuntime_UClibc)
     int pthread_mutexattr_settype(pthread_mutexattr_t*, int) @trusted;
     int pthread_setconcurrency(int);
 }
+else version (Haiku)
+{
+    enum
+    {
+        PTHREAD_MUTEX_DEFAULT       = 0,
+        PTHREAD_MUTEX_NORMAL        = 1,
+        PTHREAD_MUTEX_ERRORCHECK    = 2,
+        PTHREAD_MUTEX_RECURSIVE     = 3,
+    }
+
+    int pthread_attr_getguardsize(in pthread_attr_t*, size_t*);
+    int pthread_attr_setguardsize(pthread_attr_t*, size_t);
+    int pthread_getconcurrency();
+    int pthread_mutexattr_gettype(pthread_mutexattr_t*, int*);
+    int pthread_mutexattr_settype(pthread_mutexattr_t*, int) @trusted;
+    int pthread_setconcurrency(int);
+}
 else
 {
     static assert(false, "Unsupported platform");
@@ -1192,6 +1332,9 @@ else version (CRuntime_Musl)
 else version (CRuntime_UClibc)
 {
     int pthread_getcpuclockid(pthread_t, clockid_t*);
+}
+else version (Haiku)
+{
 }
 else
 {
@@ -1264,6 +1407,12 @@ else version (CRuntime_UClibc)
     int pthread_rwlock_timedrdlock(pthread_rwlock_t*, in timespec*);
     int pthread_rwlock_timedwrlock(pthread_rwlock_t*, in timespec*);
 }
+else version (Haiku)
+{
+    int pthread_mutex_timedlock(pthread_mutex_t*, in timespec*);
+    int pthread_rwlock_timedrdlock(pthread_rwlock_t*, in timespec*);
+    int pthread_rwlock_timedwrlock(pthread_rwlock_t*, in timespec*);
+}
 else
 {
     static assert(false, "Unsupported platform");
@@ -1307,6 +1456,38 @@ else version (Solaris)
         PTHREAD_PRIO_NONE    = 0x00,
         PTHREAD_PRIO_INHERIT = 0x10,
         PTHREAD_PRIO_PROTECT = 0x20,
+    }
+
+    int pthread_mutex_getprioceiling(in pthread_mutex_t*, int*);
+    int pthread_mutex_setprioceiling(pthread_mutex_t*, int, int*);
+    int pthread_mutexattr_getprioceiling(in pthread_mutexattr_t*, int*);
+    int pthread_mutexattr_getprotocol(in pthread_mutexattr_t*, int*);
+    int pthread_mutexattr_setprioceiling(pthread_mutexattr_t*, int);
+    int pthread_mutexattr_setprotocol(pthread_mutexattr_t*, int);
+}
+else version (OpenBSD)
+{
+    enum
+    {
+        PTHREAD_PRIO_NONE    = 0,
+        PTHREAD_PRIO_INHERIT = 1,
+        PTHREAD_PRIO_PROTECT = 2,
+    }
+
+    int pthread_mutex_getprioceiling(in pthread_mutex_t*, int*);
+    int pthread_mutex_setprioceiling(pthread_mutex_t*, int, int*);
+    int pthread_mutexattr_getprioceiling(in pthread_mutexattr_t*, int*);
+    int pthread_mutexattr_getprotocol(in pthread_mutexattr_t*, int*);
+    int pthread_mutexattr_setprioceiling(pthread_mutexattr_t*, int);
+    int pthread_mutexattr_setprotocol(pthread_mutexattr_t*, int);
+}
+else version (Haiku)
+{
+    enum
+    {
+        PTHREAD_PRIO_NONE    = 0,
+        PTHREAD_PRIO_INHERIT = 1,
+        PTHREAD_PRIO_PROTECT = 2,
     }
 
     int pthread_mutex_getprioceiling(in pthread_mutex_t*, int*);
@@ -1505,6 +1686,23 @@ else version (CRuntime_UClibc)
     int pthread_setschedparam(pthread_t, int, in sched_param*);
     int pthread_setschedprio(pthread_t, int);
 }
+else version (Haiku)
+{
+    enum
+    {
+        PTHREAD_SCOPE_PROCESS   = 0,
+        PTHREAD_SCOPE_SYSTEM    = 0x2
+    }
+
+    //int pthread_attr_getinheritsched(in pthread_attr_t*, int*);
+    //int pthread_attr_getschedpolicy(in pthread_attr_t*, int*);
+    int pthread_attr_getscope(in pthread_attr_t*, int*);
+    //int pthread_attr_setinheritsched(pthread_attr_t*, int);
+    //int pthread_attr_setschedpolicy(pthread_attr_t*, int);
+    int pthread_attr_setscope(pthread_attr_t*, int);
+    int pthread_getschedparam(pthread_t, int*, sched_param*);
+    int pthread_setschedparam(pthread_t, int, sched_param*);
+}
 else
 {
     static assert(false, "Unsupported platform");
@@ -1608,6 +1806,15 @@ else version (CRuntime_UClibc)
     int pthread_attr_setstackaddr(pthread_attr_t*, void*);
     int pthread_attr_setstacksize(pthread_attr_t*, size_t);
 }
+else version (Haiku)
+{
+    //int pthread_attr_getstack(in pthread_attr_t*, void**, size_t*);
+    //int pthread_attr_getstackaddr(in pthread_attr_t*, void**);
+    int pthread_attr_getstacksize(in pthread_attr_t*, size_t*);
+    //int pthread_attr_setstack(pthread_attr_t*, void*, size_t);
+    //int pthread_attr_setstackaddr(pthread_attr_t*, void*);
+    int pthread_attr_setstacksize(pthread_attr_t*, size_t);
+}
 else
 {
     static assert(false, "Unsupported platform");
@@ -1654,6 +1861,12 @@ else version (NetBSD)
 }
 else version (OpenBSD)
 {
+    //int pthread_condattr_getpshared(in pthread_condattr_t*, int*);
+    //int pthread_condattr_setpshared(pthread_condattr_t*, int);
+    //int pthread_mutexattr_getpshared(in pthread_mutexattr_t*, int*);
+    //int pthread_mutexattr_setpshared(pthread_mutexattr_t*, int);
+    int pthread_rwlockattr_getpshared(in pthread_rwlockattr_t*, int*);
+    int pthread_rwlockattr_setpshared(pthread_rwlockattr_t*, int);
 }
 else version (DragonFlyBSD)
 {
@@ -1696,6 +1909,15 @@ else version (CRuntime_Musl)
 
 }
 else version (CRuntime_UClibc)
+{
+    int pthread_condattr_getpshared(in pthread_condattr_t*, int*);
+    int pthread_condattr_setpshared(pthread_condattr_t*, int);
+    int pthread_mutexattr_getpshared(in pthread_mutexattr_t*, int*);
+    int pthread_mutexattr_setpshared(pthread_mutexattr_t*, int);
+    int pthread_rwlockattr_getpshared(in pthread_rwlockattr_t*, int*);
+    int pthread_rwlockattr_setpshared(pthread_rwlockattr_t*, int);
+}
+else version (Haiku)
 {
     int pthread_condattr_getpshared(in pthread_condattr_t*, int*);
     int pthread_condattr_setpshared(pthread_condattr_t*, int);

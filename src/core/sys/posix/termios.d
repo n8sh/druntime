@@ -467,6 +467,166 @@ else version (FreeBSD)
     int     tcsendbreak(int, int);
     int     tcsetattr(int, int, in termios*);
 }
+else version (OpenBSD)
+{
+    // https://github.com/openbsd/src/blob/master/sys/sys/termios.h
+    alias ubyte cc_t;
+    alias uint  speed_t;
+    alias uint  tcflag_t;
+
+    enum NCCS   = 20;
+
+    struct termios
+    {
+        tcflag_t   c_iflag;
+        tcflag_t   c_oflag;
+        tcflag_t   c_cflag;
+        tcflag_t   c_lflag;
+        cc_t[NCCS] c_cc;
+        speed_t    c_ispeed;
+        speed_t    c_ospeed;
+    }
+
+    enum
+    {
+        VEOF        = 0,   /* ICANON */
+        VEOL        = 1,   /* ICANON */
+        VEOL2       = 2,   /* ICANON */
+        VERASE      = 3,   /* ICANON */
+        VWERASE     = 4,   /* ICANON */
+        VKILL       = 5,   /* ICANON */
+        VREPRINT    = 6,   /* ICANON */
+        /*          7      spare 1 */
+        VINTR       = 8,   /* ISIG */
+        VQUIT       = 9,   /* ISIG */
+        VSUSP       = 10,  /* ISIG */
+        VDSUSP      = 11,  /* ISIG */
+        VSTART      = 12,  /* IXON, IXOFF */
+        VSTOP       = 13,  /* IXON, IXOFF */
+        VLNEXT      = 14,  /* IEXTEN */
+        VDISCARD    = 15,  /* IEXTEN */
+        VMIN        = 16,  /* !ICANON */
+        VTIME       = 17,  /* !ICANON */
+        VSTATUS     = 18,  /* ICANON */
+    }
+
+    enum
+    {
+        IGNBRK      = 0x00000001,  /* ignore BREAK condition */
+        BRKINT      = 0x00000002,  /* map BREAK to SIGINT */
+        IGNPAR      = 0x00000004,  /* ignore (discard) parity errors */
+        PARMRK      = 0x00000008,  /* mark parity and framing errors */
+        INPCK       = 0x00000010,  /* enable checking of parity errors */
+        ISTRIP      = 0x00000020,  /* strip 8th bit off chars */
+        INLCR       = 0x00000040,  /* map NL into CR */
+        IGNCR       = 0x00000080,  /* ignore CR */
+        ICRNL       = 0x00000100,  /* map CR to NL (ala CRMOD) */
+        IXON        = 0x00000200,  /* enable output flow control */
+        IXOFF       = 0x00000400,  /* enable input flow control */
+    }
+
+    enum
+    {
+        OPOST       = 0x00000001,  /* enable following output processing */
+    }
+
+    enum
+    {
+        B0       = 0,
+        B50      = 50,
+        B75      = 75,
+        B110     = 110,
+        B134     = 134,
+        B150     = 150,
+        B200     = 200,
+        B300     = 300,
+        B600     = 600,
+        B1200    = 1200,
+        B1800    = 1800,
+        B2400    = 2400,
+        B4800    = 4800,
+        B9600    = 9600,
+        B19200   = 19200,
+        B38400   = 38400,
+    }
+
+    enum
+    {
+        CIGNORE     = 0x00000001,  /* ignore control flags */
+        CSIZE       = 0x00000300,  /* character size mask */
+        CS5         = 0x00000000,  /* 5 bits (pseudo) */
+        CS6         = 0x00000100,  /* 6 bits */
+        CS7         = 0x00000200,  /* 7 bits */
+        CS8         = 0x00000300,  /* 8 bits */
+        CSTOPB      = 0x00000400,  /* send 2 stop bits */
+        CREAD       = 0x00000800,  /* enable receiver */
+        PARENB      = 0x00001000,  /* parity enable */
+        PARODD      = 0x00002000,  /* odd parity, else even */
+        HUPCL       = 0x00004000,  /* hang up on last close */
+        CLOCAL      = 0x00008000,  /* ignore modem status lines */
+        CRTSCTS     = 0x00010000,  /* RTS/CTS full-duplex flow control */
+        CRTS_IFLOW  = CRTSCTS,     /* XXX compat */
+        CCTS_OFLOW  = CRTSCTS,     /* XXX compat */
+        MDMBUF      = 0x00100000,  /* DTR/DCD hardware flow control */
+        CHWFLOW     = (MDMBUF|CRTSCTS), /* all types of hw flow control */
+    }
+
+    enum
+    {
+        ECHOKE      = 0x00000001,  /* visual erase for line kill */
+        ECHOE       = 0x00000002,  /* visually erase chars */
+        ECHOK       = 0x00000004,  /* echo NL after line kill */
+        ECHO        = 0x00000008,  /* enable echoing */
+        ECHONL      = 0x00000010,  /* echo NL even if ECHO is off */
+        ECHOPRT     = 0x00000020,  /* visual erase mode for hardcopy */
+        ECHOCTL     = 0x00000040,  /* echo control chars as ^(Char) */
+        ISIG        = 0x00000080,  /* enable signals INTR, QUIT, [D]SUSP */
+        ICANON      = 0x00000100,  /* canonicalize input lines */
+        ALTWERASE   = 0x00000200,  /* use alternate WERASE algorithm */
+        IEXTEN      = 0x00000400,  /* enable DISCARD and LNEXT */
+        EXTPROC     = 0x00000800,  /* external processing */
+        TOSTOP      = 0x00400000,  /* stop background jobs from output */
+        FLUSHO      = 0x00800000,  /* output being flushed (state) */
+        XCASE       = 0x01000000,  /* canonical upper/lower case */
+        NOKERNINFO  = 0x02000000,  /* no kernel output from VSTATUS */
+        PENDIN      = 0x20000000,  /* XXX retype pending input (state) */
+        NOFLSH      = 0x80000000,  /* don't flush after interrupt */
+    }
+
+    enum
+    {
+        TCSANOW    = 0,
+        TCSADRAIN  = 1,
+        TCSAFLUSH  = 2,
+        TCSASOFT   = 0x10,
+    }
+
+    enum
+    {
+        TCIFLUSH    = 1,
+        TCOFLUSH    = 2,
+        TCIOFLUSH   = 3,
+    }
+
+    enum
+    {
+        TCOOFF      = 1,
+        TCOON       = 2,
+        TCIOFF      = 3,
+        TCION       = 4,
+    }
+
+    speed_t cfgetispeed(in termios*);
+    speed_t cfgetospeed(in termios*);
+    int     cfsetispeed(termios*, speed_t);
+    int     cfsetospeed(termios*, speed_t);
+    int     tcdrain(int);
+    int     tcflow(int, int);
+    int     tcflush(int, int);
+    int     tcgetattr(int, termios*);
+    int     tcsendbreak(int, int);
+    int     tcsetattr(int, int, in termios*);
+}
 else version (DragonFlyBSD)
 {
     alias ubyte cc_t;
@@ -931,6 +1091,157 @@ else version (CRuntime_UClibc)
     int     tcsendbreak(int, int);
     int     tcsetattr(int, int, in termios*);
 }
+else version (Haiku)
+{
+    // https://github.com/haiku/haiku/blob/master/headers/posix/termios.h
+    alias ubyte cc_t;
+    alias ubyte speed_t;
+    alias uint  tcflag_t;
+
+    enum NCCS   = 11;
+
+    struct termios
+    {
+        tcflag_t    c_iflag;    /* input modes */
+        tcflag_t    c_oflag;    /* output modes */
+        tcflag_t    c_cflag;    /* control modes */
+        tcflag_t    c_lflag;    /* local modes */
+        ubyte       c_line;     /* line discipline */
+        speed_t     c_ispeed;   /* custom input baudrate */
+        speed_t     c_ospeed;   /* custom output baudrate */
+        cc_t[NCCS]  c_cc; /* control characters */
+    }
+
+    enum
+    {
+        VINTR   = 0,
+        VQUIT   = 1,
+        VERASE  = 2,
+        VKILL   = 3,
+        VEOF    = 4,
+        VEOL    = 5,
+        VMIN    = 4,
+        VTIME   = 5,
+        VEOL2   = 6,
+        VSWTCH  = 7,
+        VSTART  = 8,
+        VSTOP   = 9,
+        VSUSP   = 10,
+    }
+
+    enum
+    {
+        IGNBRK      = 0x01,        /* ignore break condition */
+        BRKINT      = 0x02,        /* break sends interrupt */
+        IGNPAR      = 0x04,        /* ignore characters with parity errors */
+        PARMRK      = 0x08,        /* mark parity errors */
+        INPCK       = 0x10,        /* enable input parity checking */
+        ISTRIP      = 0x20,        /* strip high bit from characters */
+        INLCR       = 0x40,        /* maps newline to CR on input */
+        IGNCR       = 0x80,        /* ignore carriage returns */
+        ICRNL       = 0x100,       /* map CR to newline on input */
+        IUCLC       = 0x200,       /* map all upper case to lower */
+        IXON        = 0x400,       /* enable input SW flow control */
+        IXANY       = 0x800,       /* any character will restart input */
+        IXOFF       = 0x1000,      /* enable output SW flow control */
+    }
+
+    enum OPOST      = 0x01; /* enable postprocessing of output */
+    enum OLCUC      = 0x02; /* map lowercase to uppercase */
+
+    enum CBAUD      = 0x1F; /* line speed definitions */
+
+    enum
+    {
+        B0          = 0x00,            /* hang up */
+        B50         = 0x01,            /* 50 baud */
+        B75         = 0x02,
+        B110        = 0x03,
+        B134        = 0x04,
+        B150        = 0x05,
+        B200        = 0x06,
+        B300        = 0x07,
+        B600        = 0x08,
+        B1200       = 0x09,
+        B1800       = 0x0A,
+        B2400       = 0x0B,
+        B4800       = 0x0C,
+        B9600       = 0x0D,
+        B19200      = 0x0E,
+        B38400      = 0x0F,
+        B57600      = 0x10,
+        B115200     = 0x11,
+        B230400     = 0x12,
+        B31250      = 0x13,            /* for MIDI */
+    }
+
+    enum
+    {
+        CSIZE       = 0x20,            /* character size */
+        CS5         = 0x00,            /* only 7 and 8 bits supported */
+        CS6         = 0x00,            /* Note, it was not very wise to set all of these */
+        CS7         = 0x00,            /* to zero, but there is not much we can do about it*/
+        CS8         = 0x20,
+        CSTOPB      = 0x40,            /* send 2 stop bits, not 1 */
+        CREAD       = 0x80,            /* enable receiver */
+        PARENB      = 0x100,           /* parity enable */
+        PARODD      = 0x200,           /* odd parity, else even */
+        HUPCL       = 0x400,           /* hangs up on last close */
+        CLOCAL      = 0x800,           /* indicates local line */
+    }
+
+    enum
+    {
+        ISIG        = 0x01,
+        ICANON      = 0x02,
+        XCASE       = 0x04,
+        ECHO        = 0x08,
+        ECHOE       = 0x10,
+        ECHOK       = 0x20,
+        ECHONL      = 0x40,
+        NOFLSH      = 0x80,
+        TOSTOP      = 0x100,
+        IEXTEN      = 0x200,
+        ECHOCTL     = 0x400,
+        ECHOPRT     = 0x800,
+        ECHOKE      = 0x1000,
+        FLUSHO      = 0x2000,
+        PENDIN      = 0x4000,
+    }
+
+    enum
+    {
+        TCSANOW    = 0x1,
+        TCSADRAIN  = 0x2,
+        TCSAFLUSH  = 0x4,
+    }
+
+    enum
+    {
+        TCIFLUSH    = 0x1,
+        TCOFLUSH    = 0x2,
+        TCIOFLUSH   = 0x3,
+    }
+
+    enum
+    {
+        TCOOFF      = 0x1,
+        TCOON       = 0x2,
+        TCIOFF      = 0x4,
+        TCION       = 0x8,
+    }
+
+    speed_t cfgetispeed(in termios*);
+    speed_t cfgetospeed(in termios*);
+    int     cfsetispeed(termios*, speed_t);
+    int     cfsetospeed(termios*, speed_t);
+    int     tcdrain(int);
+    int     tcflow(int, int);
+    int     tcflush(int, int);
+    int     tcgetattr(int, termios*);
+    int     tcsendbreak(int, int);
+    int     tcsetattr(int, int, in termios*);
+}
 
 //
 // XOpen (XSI)
@@ -1073,6 +1384,30 @@ else version (FreeBSD)
 
     pid_t   tcgetsid(int);
 }
+else version (OpenBSD)
+{
+    enum
+    {
+        IXANY       = 0x00000800,  /* any char will restart after stop */
+        IUCLC       = 0x00001000,  /* translate upper to lower case */
+        IMAXBEL     = 0x00002000,  /* ring bell on input queue full */
+    }
+
+    enum
+    {
+        ONLCR       = 0x00000002,  /* map NL to CR-NL (ala CRMOD) */
+        OXTABS      = 0x00000004,  /* expand tabs to spaces */
+        ONOEOT      = 0x00000008,  /* discard EOT's (^D) on output */
+        OCRNL       = 0x00000010,  /* map CR to NL */
+        OLCUC       = 0x00000020,  /* translate lower case to upper case */
+        ONOCR       = 0x00000040,  /* No CR output at column 0 */
+        ONLRET      = 0x00000080,  /* NL performs the CR function */
+    }
+
+    // Other enums already defined.
+
+    pid_t tcgetsid(int);
+}
 else version (DragonFlyBSD)
 {
     enum IXANY      = 0x00000800;
@@ -1210,4 +1545,46 @@ else version (CRuntime_UClibc)
     enum   FF1      = 0x0008000; // 0100000
 
     pid_t   tcgetsid(int);
+}
+else version (Haiku)
+{
+    enum
+    {
+        ONLCR       = 0x04,        /* map NL to CR-NL on output */
+        OCRNL       = 0x08,        /* map CR to NL on output */
+        ONOCR       = 0x10,        /* no CR output when at column 0 */
+        ONLRET      = 0x20,        /* newline performs CR function */
+        OFILL       = 0x40,        /* use fill characters for delays */
+        OFDEL       = 0x80,        /* Fills are DEL, otherwise NUL */
+        NLDLY       = 0x100,       /* Newline delays: */
+        NL0         = 0x000,
+        NL1         = 0x100,
+        CRDLY       = 0x600,       /* Carriage return delays: */
+        CR0         = 0x000,
+        CR1         = 0x200,
+        CR2         = 0x400,
+        CR3         = 0x600,
+        TABDLY      = 0x1800,      /* Tab delays: */
+        TAB0        = 0x0000,
+        TAB1        = 0x0800,
+        TAB2        = 0x1000,
+        TAB3        = 0x1800,
+        BSDLY       = 0x2000,      /* Backspace delays: */
+        BS0         = 0x0000,
+        BS1         = 0x2000,
+        VTDLY       = 0x4000,      /* Vertical tab delays: */
+        VT0         = 0x0000,
+        VT1         = 0x4000,
+        FFDLY       = 0x8000,      /* Form feed delays: */
+        FF0         = 0x0000,
+        FF1         = 0x8000,
+    }
+
+    enum
+    {
+        XLOBLK      = 0x1000,          /* block layer output ?*/
+        CTSFLOW     = 0x2000,          /* enable CTS flow */
+        RTSFLOW     = 0x4000,          /* enable RTS flow */
+        CRTSCTS     = (RTSFLOW | CTSFLOW),
+    }
 }

@@ -51,6 +51,15 @@ else version (NetBSD)
 {
     enum TCP_NODELAY = 1;
 }
+else version (OpenBSD)
+{
+    // https://github.com/openbsd/src/blob/master/sys/netinet/tcp.h
+    enum TCP_NODELAY     = 0x01;
+    enum TCP_MAXSEG      = 0x02;
+    enum TCP_MD5SIG      = 0x04;
+    enum TCP_SACK_ENABLE = 0x08;
+    enum TCP_NOPUSH      = 0x10;
+}
 else version (DragonFlyBSD)
 {
     enum TCP_NODELAY = 1;
@@ -62,4 +71,12 @@ else version (Solaris)
 else version (linux)
 {
     enum TCP_NODELAY = 1;
+}
+else version (Haiku)
+{
+    // https://github.com/haiku/haiku/blob/master/headers/posix/netinet/tcp.h
+    enum TCP_NODELAY = 0x01;
+    enum TCP_MAXSEG  = 0x02;
+    enum TCP_NOPUSH  = 0x04;
+    enum TCP_NOOPT   = 0x08;
 }

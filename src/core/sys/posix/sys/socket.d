@@ -17,6 +17,8 @@ module core.sys.posix.sys.socket;
 private import core.sys.posix.config;
 public import core.sys.posix.sys.types; // for ssize_t
 public import core.sys.posix.sys.uio;   // for iovec
+version (OpenBSD)
+    import core.sys.posix.sys.time : timeval;
 
 version (OSX)
     version = Darwin;
@@ -1119,6 +1121,324 @@ else version (NetBSD)
     int     sockatmark(int) @safe;
     int     socketpair(int, int, int, ref int[2]) @safe;
 }
+else version (OpenBSD)
+{
+    // https://github.com/openbsd/src/blob/master/sys/sys/socket.h
+    // https://github.com/openbsd/src/blob/master/sys/sys/_types.h
+    alias uint   socklen_t;
+    alias ubyte  sa_family_t;
+
+    enum
+    {
+        SOCK_STREAM         = 1,
+        SOCK_DGRAM          = 2,
+        //SOCK_RAW          = 3,      // defined below
+        SOCK_RDM            = 4,
+        SOCK_SEQPACKET      = 5,
+    }
+
+    enum SOCK_CLOEXEC       = 0x8000;
+    enum SOCK_NONBLOCK      = 0x4000;
+    enum SOCK_DNS           = 0x1000;
+
+    enum : uint
+    {
+        SO_DEBUG        = 0x0001,
+        SO_ACCEPTCONN   = 0x0002,
+        SO_REUSEADDR    = 0x0004,
+        SO_KEEPALIVE    = 0x0008,
+        SO_DONTROUTE    = 0x0010,
+        SO_BROADCAST    = 0x0020,
+        SO_USELOOPBACK  = 0x0040,
+        SO_LINGER       = 0x0080,
+        SO_OOBINLINE    = 0x0100,
+        SO_REUSEPORT    = 0x0200,
+
+        SO_TIMESTAMP    = 0x0800,
+        SO_BINDANY      = 0x1000,
+        SO_ZEROIZE      = 0x2000,
+
+        SO_SNDBUF       = 0x1001,
+        SO_RCVBUF       = 0x1002,
+        SO_SNDLOWAT     = 0x1003,
+        SO_RCVLOWAT     = 0x1004,
+        SO_SNDTIMEO     = 0x1005,
+        SO_RCVTIMEO     = 0x1006,
+        SO_ERROR        = 0x1007,
+        SO_TYPE         = 0x1008,
+        SO_NETPROC      = 0x1020,
+        SO_RTABLE       = 0x1021,
+        SO_PEERCRED     = 0x1022,
+        SO_SPLICE       = 0x1023,
+    }
+
+    struct linger
+    {
+        int l_onoff;
+        int l_linger;
+    }
+
+    struct splice
+    {
+        int     sp_fd;   /* drain socket file descriptor */
+        off_t   sp_max;  /* if set, maximum bytes to splice */
+        timeval sp_idle; /* idle timeout */
+    }
+
+    enum : uint
+    {
+        SOL_SOCKET          = 0xffff
+    }
+
+    // Addess families
+    enum
+    {
+        AF_UNSPEC       = 0,       /* unspecified */
+        AF_UNIX         = 1,       /* local to host */
+        AF_LOCAL        = AF_UNIX, /* draft POSIX compatibility */
+        AF_INET         = 2,       /* internetwork: UDP, TCP, etc. */
+        AF_IMPLINK      = 3,       /* arpanet imp addresses */
+        AF_PUP          = 4,       /* pup protocols: e.g. BSP */
+        AF_CHAOS        = 5,       /* mit CHAOS protocols */
+        AF_NS           = 6,       /* XEROX NS protocols */
+        AF_ISO          = 7,       /* ISO protocols */
+        AF_OSI          = AF_ISO,
+        AF_ECMA         = 8,       /* european computer manufacturers */
+        AF_DATAKIT      = 9,       /* datakit protocols */
+        AF_CCITT        = 10,      /* CCITT protocols, X.25 etc */
+        AF_SNA          = 11,      /* IBM SNA */
+        AF_DECnet       = 12,      /* DECnet */
+        AF_DLI          = 13,      /* DEC Direct data link interface */
+        AF_LAT          = 14,      /* LAT */
+        AF_HYLINK       = 15,      /* NSC Hyperchannel */
+        AF_APPLETALK    = 16,      /* Apple Talk */
+        AF_ROUTE        = 17,      /* Internal Routing Protocol */
+        AF_LINK         = 18,      /* Link layer interface */
+        pseudo_AF_XTP   = 19,      /* eXpress Transfer Protocol (no AF) */
+        AF_COIP         = 20,      /* connection-oriented IP, aka ST II */
+        AF_CNT          = 21,      /* Computer Network Technology */
+        pseudo_AF_RTIP  = 22,      /* Help Identify RTIP packets */
+        AF_IPX          = 23,      /* Novell Internet Protocol */
+        //AF_INET6      = 24, // Defined below.
+        pseudo_AF_PIP   = 25,      /* Help Identify PIP packets */
+        AF_ISDN         = 26,      /* Integrated Services Digital Network*/
+        AF_E164         = AF_ISDN, /* CCITT E.164 recommendation */
+        AF_NATM         = 27,      /* native ATM access */
+        AF_ENCAP        = 28,
+        AF_SIP          = 29,      /* Simple Internet Protocol */
+        AF_KEY          = 30,
+        pseudo_AF_HDRCMPLT = 31,   /* Used by BPF to not rewrite headers
+                                      in interface output routine */
+        AF_BLUETOOTH    = 32,      /* Bluetooth */
+        AF_MPLS         = 33,      /* MPLS */
+        pseudo_AF_PFLOW = 34,      /* pflow */
+        pseudo_AF_PIPEX = 35,      /* PIPEX */
+    }
+
+    struct sockaddr
+    {
+        ubyte       sa_len;
+        sa_family_t sa_family;
+        byte[14]    sa_data;
+    }
+
+    struct sockaddr_storage
+    {
+        uint        ss_len;
+        sa_family_t ss_family;
+        ubyte[6]    __ss_pad1;
+        ulong       __ss_pad2;
+        ubyte[240]  __ss_pad3;
+    }
+
+    // Protocol families, same as address families for now.
+    enum PF_UNSPEC    = AF_UNSPEC;
+    enum PF_LOCAL     = AF_LOCAL;
+    enum PF_UNIX      = AF_UNIX;
+    enum PF_INET      = AF_INET;
+    enum PF_IMPLINK   = AF_IMPLINK;
+    enum PF_PUP       = AF_PUP;
+    enum PF_CHAOS     = AF_CHAOS;
+    enum PF_NS        = AF_NS;
+    enum PF_ISO       = AF_ISO;
+    enum PF_OSI       = AF_ISO;
+    enum PF_ECMA      = AF_ECMA;
+    enum PF_DATAKIT   = AF_DATAKIT;
+    enum PF_CCITT     = AF_CCITT;
+    enum PF_SNA       = AF_SNA;
+    enum PF_DECnet    = AF_DECnet;
+    enum PF_DLI       = AF_DLI;
+    enum PF_LAT       = AF_LAT;
+    enum PF_HYLINK    = AF_HYLINK;
+    enum PF_APPLETALK = AF_APPLETALK;
+    enum PF_ROUTE     = AF_ROUTE;
+    enum PF_LINK      = AF_LINK;
+    enum PF_XTP       = pseudo_AF_XTP;   /* really just proto family, no AF */
+    enum PF_COIP      = AF_COIP;
+    enum PF_CNT       = AF_CNT;
+    enum PF_IPX       = AF_IPX;          /* same format as AF_NS */
+    enum PF_INET6     = AF_INET6;
+    enum PF_RTIP      = pseudo_AF_RTIP;  /* same format as AF_INET */
+    enum PF_PIP       = pseudo_AF_PIP;
+    enum PF_ISDN      = AF_ISDN;
+    enum PF_NATM      = AF_NATM;
+    enum PF_ENCAP     = AF_ENCAP;
+    enum PF_SIP       = AF_SIP;
+    enum PF_KEY       = AF_KEY;
+    enum PF_BPF       = pseudo_AF_HDRCMPLT;
+    enum PF_BLUETOOTH = AF_BLUETOOTH;
+    enum PF_MPLS      = AF_MPLS;
+    enum PF_PFLOW     = pseudo_AF_PFLOW;
+    enum PF_PIPEX     = pseudo_AF_PIPEX;
+
+    // These are the valid values for the "how" field used by shutdown(2).
+    enum
+    {
+        SHUT_RD             = 0,
+        SHUT_WR             = 1,
+        SHUT_RDWR           = 2,
+    }
+
+    // Read using getsockopt() with SOL_SOCKET, SO_PEERCRED.
+    struct sockpeercred
+    {
+        uid_t       uid;        /* effective user id */
+        gid_t       gid;        /* effective group id */
+        pid_t       pid;
+    }
+
+    enum SOMAXCONN = 128;
+
+    struct msghdr
+    {
+        void*               msg_name;
+        socklen_t           msg_namelen;
+        iovec*              msg_iov;
+        uint                msg_iovlen;
+        void*               msg_control;
+        socklen_t           msg_controllen;
+        int                 msg_flags;
+    }
+
+    enum : uint
+    {
+        MSG_OOB          = 0x1,     /* process out-of-band data */
+        MSG_PEEK         = 0x2,     /* peek at incoming message */
+        MSG_DONTROUTE    = 0x4,     /* send without using routing tables */
+        MSG_EOR          = 0x8,     /* data completes record */
+        MSG_TRUNC        = 0x10,    /* data discarded before delivery */
+        MSG_CTRUNC       = 0x20,    /* control data lost before delivery */
+        MSG_WAITALL      = 0x40,    /* wait for full request or error */
+        MSG_DONTWAIT     = 0x80,    /* this message should be nonblocking */
+        MSG_BCAST        = 0x100,   /* this message rec'd as broadcast */
+        MSG_MCAST        = 0x200,   /* this message rec'd as multicast */
+        MSG_NOSIGNAL     = 0x400,   /* do not send SIGPIPE */
+        MSG_CMSG_CLOEXEC = 0x800,   /* set FD_CLOEXEC on received fds */
+
+    }
+
+    struct cmsghdr
+    {
+         socklen_t          cmsg_len;
+         int                cmsg_level;
+         int                cmsg_type;
+         /* followed by u_char  cmsg_data[]; */
+    }
+
+    enum SCM_RIGHTS    = 0x01;
+    enum SCM_TIMESTAMP = 0x04;
+
+    // https://github.com/openbsd/src/tree/master/sys/arch /XXX/include/_types.h
+    version (X86)
+        private enum _ALIGNBYTES = int.sizeof - 1;
+    else version (X86_64)
+        private enum _ALIGNBYTES = c_long.sizeof - 1;
+    else version (AArch64)
+        private enum _ALIGNBYTES = c_long.sizeof - 1;
+    else version (Alpha)
+        private enum _ALIGNBYTES = 7;
+    else version (ARM)
+        private enum _ALIGNBYTES = double.sizeof - 1;
+    else version (HPPA)
+        private enum _ALIGNBYTES = 7;
+    else version (HPPA64)
+        private enum _ALIGNBYTES = 7;
+//    else version (M88K) // Motorola 88000, no D version.
+//        private enum _ALIGNBYTES = 15;
+    else version (MIPS32)
+        static assert(0, "No MIPS32 support on OpenBSD");
+    else version (MIPS64)
+        private enum _ALIGNBYTES = 7;
+    else version (PPC)
+        private enum _ALIGNBYTES = double.sizeof - 1;
+    else version (PPC64)
+        private enum _ALIGNBYTES = double.sizeof - 1;
+    else version (SH)
+        private enum _ALIGNBYTES = int.sizeof - 1;
+    else version (SPARC64)
+        private enum _ALIGNBYTES = 0xf;
+    else
+        static assert(0, "_ALIGNBYTES not defined for OpenBSD on target architecture.");
+
+    private enum _ALIGN(string p) = `(((cast(c_ulong) `~p~`) + _ALIGNBYTES) & ~_ALIGNBYTES`;
+
+    extern (D)
+    {
+        inout(ubyte)* CMSG_DATA()(inout(cmsghdr)* cmsg)
+        {
+            return (cast(ubyte*) cmsg) + mixin(_ALIGN!`msghdr.sizeof`);
+        }
+
+        inout(cmsghdr)* CMSG_NXTHDR()(inout(msghdr)* mhdr, inout(cmsghdr)* cmsg)
+        {
+            auto p = (cast(ubyte*) cmsg) + mixin(_ALIGN!`cmsg.cmsg_len`);
+            if (p + mixin(_ALIGN!`cmsghdr.sizeof`) >
+                    ((cast(ubyte*) mhdr.msg_control) + mhdr.msg_controllen))
+                return cast(cmsghdr*) null;
+            else
+                return cast(cmsghdr*) p;
+        }
+
+        inout(cmsghdr)* CMSG_FIRSTHDR()(inout(msghdr)* mhdr)
+        {
+            return mhdr.msg_controllen >= cmsghdr.sizeof ? cast(cmsghdr*) mhdr.msg_control : null;
+        }
+
+        size_t CMSG_ALIGN()(size_t len) pure nothrow @nogc
+        {
+            return mixin(_ALIGN!`len`);
+        }
+
+        size_t CMSG_LEN()(size_t len) pure nothrow @nogc
+        {
+            return mixin(_ALIGN!`cmsghdr.sizeof`) + len;
+        }
+
+        size_t CMSG_SPACE()(size_t len) pure nothrow @nogc
+        {
+            return mixin(_ALIGN!`cmsghdr.sizeof`) + mixin(_ALIGN!`len`);
+        }
+    }
+
+    int     accept(int, scope sockaddr*, scope socklen_t*);
+    int     bind(int, const scope sockaddr*, socklen_t);
+    int     connect(int, const scope sockaddr*, socklen_t);
+    int     getpeername(int, scope sockaddr*, scope socklen_t*);
+    int     getsockname(int, scope sockaddr*, scope socklen_t*);
+    int     getsockopt(int, int, int, scope void*, scope socklen_t*);
+    int     listen(int, int) @safe;
+    ssize_t recv(int, scope void*, size_t, int);
+    ssize_t recvfrom(int, scope void*, size_t, int, scope sockaddr*, scope socklen_t*);
+    ssize_t recvmsg(int, scope msghdr*, int);
+    ssize_t send(int, const scope void*, size_t, int);
+    ssize_t sendmsg(int, const scope msghdr*, int);
+    ssize_t sendto(int, const scope void*, size_t, int, const scope sockaddr*, socklen_t);
+    int     setsockopt(int, int, int, const scope void*, socklen_t);
+    int     shutdown(int, int) @safe;
+    int     socket(int, int, int) @safe;
+    int     sockatmark(int) @safe;
+    int     socketpair(int, int, int, ref int[2]) @safe;
+}
 else version (DragonFlyBSD)
 {
     alias uint   socklen_t;
@@ -2045,6 +2365,219 @@ else version (CRuntime_UClibc)
     int     sockatmark(int);
     int     socketpair(int, int, int, ref int[2]);
 }
+else version (Haiku)
+{
+    // https://github.com/haiku/haiku/blob/master/headers/posix/sys/socket.h
+    alias uint socklen_t;
+    alias ubyte sa_family_t;
+
+    /* Address families */
+    enum
+    {
+        AF_UNSPEC       = 0,
+        AF_INET         = 1,
+        AF_APPLETALK    = 2,
+        AF_ROUTE        = 3,
+        AF_LINK         = 4,
+        //AF_INET6        = 5, // Defined below.
+        AF_DLI          = 6,
+        AF_IPX          = 7,
+        AF_NOTIFY       = 8,
+        AF_LOCAL        = 9,
+        AF_UNIX         = AF_LOCAL,
+        AF_BLUETOOTH    = 10,
+        AF_MAX          = 11,
+    }
+
+    /* Protocol families, deprecated */
+    enum
+    {
+        PF_UNSPEC       = AF_UNSPEC,
+        PF_INET         = AF_INET,
+        PF_ROUTE        = AF_ROUTE,
+        PF_LINK         = AF_LINK,
+        PF_INET6        = AF_INET6,
+        PF_LOCAL        = AF_LOCAL,
+        PF_UNIX         = AF_UNIX,
+        PF_BLUETOOTH    = AF_BLUETOOTH,
+    }
+
+    /* Socket types */
+    enum
+    {
+        SOCK_STREAM     = 1,
+        SOCK_DGRAM      = 2,
+        //SOCK_RAW        = 3, // Defined below.
+        SOCK_SEQPACKET  = 5,
+        SOCK_MISC       = 255,
+    }
+
+    enum SOL_SOCKET = -1;
+
+    enum : uint
+    {
+        SO_ACCEPTCONN   = 0x00000001,
+        SO_BROADCAST    = 0x00000002,
+        SO_DEBUG        = 0x00000004,
+        SO_DONTROUTE    = 0x00000008,
+        SO_KEEPALIVE    = 0x00000010,
+        SO_OOBINLINE    = 0x00000020,
+        SO_REUSEADDR    = 0x00000040,
+        SO_REUSEPORT    = 0x00000080,
+        SO_USELOOPBACK  = 0x00000100,
+        SO_LINGER       = 0x00000200,
+
+        SO_SNDBUF       = 0x40000001,
+        SO_SNDLOWAT     = 0x40000002,
+        SO_SNDTIMEO     = 0x40000003,
+        SO_RCVBUF       = 0x40000004,
+        SO_RCVLOWAT     = 0x40000005,
+        SO_RCVTIMEO     = 0x40000006,
+        SO_ERROR        = 0x40000007,
+        SO_TYPE         = 0x40000008,
+        SO_NONBLOCK     = 0x40000009,
+        SO_BINDTODEVICE = 0x4000000a,
+        SO_PEERCRED     = 0x4000000b,
+    }
+
+    enum
+    {
+        SHUT_RD   = 0,
+        SHUT_WR   = 1,
+        SHUT_RDWR = 2,
+    }
+
+    enum SOMAXCONN = 32;
+
+    struct linger
+    {
+        int l_onoff;
+        int l_linger;
+    }
+
+    struct sockaddr
+    {
+        ubyte       sa_len;
+        sa_family_t sa_family;
+        ubyte[30]   sa_data;
+    }
+
+    struct sockaddr_storage
+    {
+        ubyte       ss_len;
+        sa_family_t ss_family;
+        ubyte[6]    __ss_pad1;
+        ulong       __ss_pad2;
+        ubyte[112]  __ss_pad3;
+    }
+
+    struct msghdr
+    {
+        void*       msg_name;
+        socklen_t   msg_namelen;
+        iovec*      msg_iov;
+        int         msg_iovlen;
+        void*       msg_control;
+        socklen_t   msg_controllen;
+        int         msg_flags;
+    }
+
+    enum
+    {
+        MSG_OOB         = 0x0001,
+        MSG_PEEK        = 0x0002,
+        MSG_DONTROUTE   = 0x0004,
+        MSG_EOR         = 0x0008,
+        MSG_TRUNC       = 0x0010,
+        MSG_CTRUNC      = 0x0020,
+        MSG_WAITALL     = 0x0040,
+        MSG_DONTWAIT    = 0x0080,
+        MSG_BCAST       = 0x0100,
+        MSG_MCAST       = 0x0200,
+        MSG_EOF         = 0x0400,
+        MSG_NOSIGNAL    = 0x0800,
+    }
+
+    struct cmsghdr
+    {
+        socklen_t   cmsg_len;
+        int         cmsg_level;
+        int         cmsg_type;
+        /* data follows */
+    }
+
+    // _ALIGN defined in https://github.com/haiku/haiku/blob/master/headers/posix/sys/param.h
+    private enum _ALIGNBYTES = c_long.sizeof - 1;
+    private enum _ALIGN(string p) = `(((cast(c_ulong) `~p~`) + _ALIGNBYTES) & ~_ALIGNBYTES)`;
+
+    extern (D)
+    {
+        inout(ubyte)* CMSG_DATA()(inout(cmsghdr)* cmsg)
+        {
+            return (cast(ubyte*) cmsg) + mixin(_ALIGN!`msghdr.sizeof`);
+        }
+
+        inout(cmsghdr)* CMSG_NXTHDR()(inout(msghdr)* mhdr, inout(cmsghdr)* cmsg)
+        {
+            auto p = (cast(ubyte*) cmsg) + mixin(_ALIGN!`cmsg.cmsg_len`);
+            if (p + mixin(_ALIGN!`cmsghdr.sizeof`) >
+                    ((cast(ubyte*) mhdr.msg_control) + mhdr.msg_controllen))
+                return cast(cmsghdr*) null;
+            else
+                return cast(cmsghdr*) p;
+        }
+
+        inout(cmsghdr)* CMSG_FIRSTHDR()(inout(msghdr)* mhdr)
+        {
+            return mhdr.msg_controllen >= cmsghdr.sizeof ? cast(cmsghdr*) mhdr.msg_control : null;
+        }
+
+        size_t CMSG_SPACE()(size_t len) pure nothrow @nogc
+        {
+            return mixin(_ALIGN!`cmsghdr.sizeof`) + mixin(_ALIGN!`len`);
+        }
+
+        size_t CMSG_LEN()(size_t len) pure nothrow @nogc
+        {
+            return mixin(_ALIGN!`cmsghdr.sizeof`) + len;
+        }
+
+        size_t CMSG_ALIGN()(size_t len) pure nothrow @nogc
+        {
+            return mixin(_ALIGN!`len`);
+        }
+    }
+
+    /* SOL_SOCKET control message types */
+    enum SCM_RIGHTS = 0x01;
+
+    /* parameter to SO_PEERCRED */
+    struct ucred
+    {
+        pid_t   pid;
+        uid_t   uid;
+        gid_t   gid;
+    }
+
+    int     accept(int, sockaddr*, socklen_t*);
+    int     bind(int, in sockaddr*, socklen_t);
+    int     connect(int, in sockaddr*, socklen_t);
+    int     getpeername(int, sockaddr*, socklen_t*);
+    int     getsockname(int, sockaddr*, socklen_t*);
+    int     getsockopt(int, int, int, void*, socklen_t*);
+    int     listen(int, int);
+    ssize_t recv(int, void*, size_t, int);
+    ssize_t recvfrom(int, void*, size_t, int, sockaddr*, socklen_t*);
+    ssize_t recvmsg(int, msghdr*, int);
+    ssize_t send(int, in void*, size_t, int);
+    ssize_t sendmsg(int, in msghdr*, int);
+    ssize_t sendto(int, in void*, size_t, int, in sockaddr*, socklen_t);
+    int     setsockopt(int, int, int, in void*, socklen_t);
+    int     shutdown(int, int);
+    int     socket(int, int, int);
+    int     sockatmark(int);
+    int     socketpair(int, int, int, ref int[2]);
+}
 else
 {
     static assert(false, "Unsupported platform");
@@ -2085,6 +2618,13 @@ else version (NetBSD)
         AF_INET6    = 24
     }
 }
+else version (OpenBSD)
+{
+    enum
+    {
+        AF_INET6    = 24
+    }
+}
 else version (DragonFlyBSD)
 {
     enum
@@ -2115,6 +2655,13 @@ else version (CRuntime_UClibc)
     enum
     {
         AF_INET6    = 10
+    }
+}
+else version (Haiku)
+{
+    enum
+    {
+        AF_INET6    = 5
     }
 }
 else
@@ -2157,6 +2704,13 @@ else version (NetBSD)
         SOCK_RAW    = 3
     }
 }
+else version (OpenBSD)
+{
+    enum
+    {
+        SOCK_RAW    = 3
+    }
+}
 else version (DragonFlyBSD)
 {
     enum
@@ -2182,6 +2736,13 @@ else version (CRuntime_Musl)
 {
 }
 else version (CRuntime_UClibc)
+{
+    enum
+    {
+        SOCK_RAW    = 3
+    }
+}
+else version (Haiku)
 {
     enum
     {

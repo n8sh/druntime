@@ -158,6 +158,64 @@ else version (NetBSD)
     const(char)*    inet_ntop(int, in void*, char*, socklen_t);
     int             inet_pton(int, in char*, void*);
 }
+else version (OpenBSD)
+{
+    // https://github.com/openbsd/src/blob/master/include/arpa/inet.h
+    // https://github.com/openbsd/src/blob/master/sys/sys/_types.h
+    alias uint16_t in_port_t;
+    alias uint32_t in_addr_t;
+
+    struct in_addr
+    {
+        in_addr_t s_addr;
+    }
+
+    enum INET_ADDRSTRLEN = 16;
+
+    // htonl, htons, ntohl, and ntohs are macros in OpenBSD.
+    version (BigEndian)
+    {
+        extern (D)
+        {
+            uint32_t htonl()(uint32_t x) { return x; }
+            uint16_t htons()(uint16_t x) { return x; }
+            alias ntohl = htonl;
+            alias ntohs = htons;
+        }
+    }
+    else
+    {
+        version (LDC)
+        {
+            import ldc.intrinsics : llvm_bswap;
+            alias htonl = llvm_bswap!uint;
+            alias htons = llvm_bswap!ushort;
+        }
+        else version (GNU)
+        {
+            public import gcc.builtins : htonl = __builtin_bswap32, htons = __builtin_bswap16;
+        }
+        else
+        {
+            // The reason we don't just `public import core.bitop : htonl = swap`
+            // is that swap has uint & ulong overloads so doing that could conceal
+            // usage errors.
+            static import core.bitop;
+            extern (D)
+            {
+                uint32_t htonl()(uint32_t x) { return core.bitop.bswap(x); }
+                uint16_t htons()(uint16_t x) { return cast(uint16_t) ((x << 8) | (x >>> 8)); }
+            }
+        }
+    }
+    alias ntohl = htonl;
+    alias ntohs = htons;
+
+    in_addr_t       inet_addr(in char*);
+    char*           inet_ntoa(in_addr);
+    const(char)*    inet_ntop(int, in void*, char*, socklen_t);
+    int             inet_pton(int, in char*, void*);
+}
 else version (DragonFlyBSD)
 {
     alias uint16_t in_port_t;
@@ -297,7 +355,49 @@ else version (CRuntime_UClibc)
     const(char)*    inet_ntop(int, in void*, char*, socklen_t);
     int             inet_pton(int, in char*, void*);
 }
+else version (Haiku)
+{
+    // https://github.com/openbsd/src/blob/master/include/arpa/inet.h
+    // https://github.com/haiku/haiku/blob/master/headers/posix/netinet/in.h
+    alias uint16_t in_port_t;
+    alias uint32_t in_addr_t;
 
+    struct in_addr
+    {
+        in_addr_t s_addr;
+    }
+
+    enum INET_ADDRSTRLEN = 16;
+
+    // htonl, htons, ntohl, and ntohs are macros in OpenBSD.
+    version (BigEndian)
+    {
+        extern (D)
+        {
+            uint32_t htonl()(uint32_t x) { return x; }
+            uint16_t htons()(uint16_t x) { return x; }
+            alias ntohl = htonl;
+            alias ntohs = htons;
+        }
+    }
+    else
+    {
+        @nogc nothrow pure @trusted
+        {
+            uint __swap_int32(uint);
+            ushort __swap_int16(ushort);
+        }
+        alias htonl = __swap_int32;
+        alias ntohl = __swap_int32;
+        alias htons = __swap_int16;
+        alias ntohs = __swap_int16;
+    }
+
+    in_addr_t       inet_addr(in char*);
+    char*           inet_ntoa(in_addr);
+    const(char)*    inet_ntop(int, in void*, char*, socklen_t);
+    int             inet_pton(int, in char*, void*);
+}
 //
 // IPV6 (IP6)
 //
@@ -324,6 +424,10 @@ else version (NetBSD)
 {
     enum INET6_ADDRSTRLEN = 46;
 }
+else version (OpenBSD)
+{
+    enum INET6_ADDRSTRLEN = 46;
+}
 else version (DragonFlyBSD)
 {
     enum INET6_ADDRSTRLEN = 46;
@@ -338,5 +442,10 @@ else version (CRuntime_Bionic)
 }
 else version (CRuntime_UClibc)
 {
+    enum INET6_ADDRSTRLEN = 46;
+}
+else version (Haiku)
+{
+    // https://github.com/haiku/haiku/blob/master/headers/posix/netinet6/in6.h
     enum INET6_ADDRSTRLEN = 46;
 }

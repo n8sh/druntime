@@ -405,6 +405,31 @@ else version (CRuntime_UClibc)
         dirent* readdir(DIR*);
     }
 }
+else version (Haiku)
+{
+    // https://github.com/haiku/haiku/blob/master/headers/posix/dirent.h
+    struct dirent
+    {
+        dev_t           d_dev;
+        dev_t           d_pdev;
+        ino_t           d_ino;
+        ino_t           d_pino;
+        ushort          d_reclen;
+        ubyte[1]        d_name;
+    }
+
+    struct DIR
+    {
+        int             fd;
+        short           next_entry;
+        ushort          entries_left;
+        c_long          seek_position;
+        c_long          current_position;
+        dirent          first_entry;
+    }
+
+    dirent* readdir(DIR*);
+}
 else
 {
     static assert(false, "Unsupported platform");
@@ -520,6 +545,10 @@ else version (CRuntime_UClibc)
     int readdir_r(DIR*, dirent*, dirent**);
   }
 }
+else version (Haiku)
+{
+    int readdir_r(DIR*, dirent*, dirent**);
+}
 else
 {
     static assert(false, "Unsupported platform");
@@ -593,6 +622,11 @@ else version (CRuntime_Musl)
 {
 }
 else version (CRuntime_UClibc)
+{
+    void   seekdir(DIR*, c_long);
+    c_long telldir(DIR*);
+}
+else version (Haiku)
 {
     void   seekdir(DIR*, c_long);
     c_long telldir(DIR*);

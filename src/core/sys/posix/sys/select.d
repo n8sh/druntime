@@ -270,6 +270,53 @@ else version (NetBSD)
     int pselect(int, fd_set*, fd_set*, fd_set*, in timespec*, in sigset_t*);
     int select(int, fd_set*, fd_set*, fd_set*, timeval*);
 }
+else version (OpenBSD)
+{
+    // https://github.com/openbsd/src/blob/master/sys/sys/select.h
+    private
+    {
+        alias uint __fd_mask;
+        enum _NFDBITS = __fd_mask.sizeof * 8;
+    }
+
+    enum uint FD_SETSIZE = 1024;
+
+    struct fd_set
+    {
+        __fd_mask[(FD_SETSIZE + (_NFDBITS - 1)) / _NFDBITS] __fds_bits;
+    }
+
+    extern (D)
+    {
+        void FD_SET()(int fd, scope fd_set* p)
+        {
+            p.__fds_bits[fd / _NFDBITS] |= (1U << (fd % _NFDBITS));
+        }
+
+        void FD_CLR()(int fd, scope fd_set* p)
+        {
+            p.__fds_bits[fd / _NFDBITS] &= ~(1U << (fd % _NFDBITS));
+        }
+
+        bool FD_ISSET()(int fd, in fd_set* p)
+        {
+            return (p.__fds_bits[fd / _NFDBITS] & (1U << (fd % _NFDBITS))) != 0;
+        }
+
+        void FD_COPY()(in fd_set* from, scope fd_set* to)
+        {
+            *to = *from;
+        }
+
+        void FD_ZERO()(scope fd_set* p)
+        {
+            p.__fds_bits[] = 0;
+        }
+    }
+
+    int pselect(int, fd_set*, fd_set*, fd_set*, in timespec*, in sigset_t*);
+    int select(int, fd_set*, fd_set*, fd_set*, timeval*);
+}
 else version (DragonFlyBSD)
 {
     private
@@ -501,6 +548,50 @@ else version (CRuntime_UClibc)
     extern (D) void FD_ZERO( fd_set* fdset ) pure
     {
         fdset.fds_bits[0 .. $] = 0;
+    }
+
+    int pselect(int, fd_set*, fd_set*, fd_set*, in timespec*, in sigset_t*);
+    int select(int, fd_set*, fd_set*, fd_set*, timeval*);
+}
+else version (Haiku)
+{
+    // https://github.com/haiku/haiku/blob/master/headers/posix/sys/select.h
+    alias uint fd_mask;
+    enum NFDBITS = fd_mask.sizeof * 8;
+
+    enum uint FD_SETSIZE = 1024;
+
+    struct fd_set
+    {
+        fd_mask[(FD_SETSIZE + (NFDBITS - 1)) / NFDBITS] bits;
+    }
+
+    extern (D)
+    {
+        void FD_SET()(int fd, scope fd_set* p)
+        {
+            p.bits[fd / _NFDBITS] |= (1U << (fd % __NFDBITS));
+        }
+
+        void FD_CLR()(int fd, scope fd_set* p)
+        {
+            p.bits[fd / _NFDBITS] &= ~(1U << (fd % __NFDBITS));
+        }
+
+        bool FD_ISSET()(int fd, in fd_set* p)
+        {
+            return (p.bits[fd / _NFDBITS] & (1U << (fd % __NFDBITS))) != 0;
+        }
+
+        void FD_COPY()(in fd_set* from, scope fd_set* to)
+        {
+            *to = *from;
+        }
+
+        void FD_ZERO()(scope fd_set* p)
+        {
+            p.bits[] = 0;
+        }
     }
 
     int pselect(int, fd_set*, fd_set*, fd_set*, in timespec*, in sigset_t*);

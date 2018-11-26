@@ -144,6 +144,30 @@ else version (NetBSD)
     extern (D) int  WSTOPSIG( int status )     { return status >> 8;                     }
     extern (D) int  WTERMSIG( int status )     { return _WSTATUS( status );              }
 }
+else version (OpenBSD)
+{
+    // https://github.com/openbsd/src/blob/master/sys/sys/wait.h
+    enum WNOHANG        = 1;
+    enum WUNTRACED      = 2;
+
+    private enum _WSTOPPED = 0x7F; // octal 0177
+    private enum _WCONTINUED = 0xffff; // octal 0177777
+
+    extern (D) @nogc nothrow pure @safe
+    {
+        int  _WSTATUS()(int status)      { return (status & 0x7F);           }
+        int  WEXITSTATUS()(int status)   { return (status >> 8) & 0xff;      }
+        int  WIFCONTINUED()(int status)  { return (status & _WCONTINUED) == _WCONTINUED; }
+        bool WIFEXITED()(int status)     { return _WSTATUS(status) == 0;     }
+        bool WIFSIGNALED()(int status)
+        {
+            return _WSTATUS(status) != _WSTOPPED && _WSTATUS(status) != 0;
+        }
+        bool WIFSTOPPED()(int status)   { return (status & 0xff) == _WSTOPPED;    }
+        int  WSTOPSIG()(int status)     { return (status >> 8) & 0xff;            }
+        int  WTERMSIG()(int status)     { return _WSTATUS( status );              }
+    }
+}
 else version (DragonFlyBSD)
 {
     enum WNOHANG        = 1;
@@ -239,6 +263,24 @@ else version (CRuntime_UClibc)
     extern (D) int  WSTOPSIG( int status )     { return WEXITSTATUS( status );      }
     extern (D) int  WTERMSIG( int status )     { return status & 0x7F;              }
 }
+else version (Haiku)
+{
+    // https://github.com/haiku/haiku/blob/master/headers/posix/sys/wait.h
+    enum WNOHANG     = 0x01;
+    enum WUNTRACED   = 0x02;
+
+    extern (D) @nogc nothrow pure @safe
+    {
+        bool WIFEXITED()(int value)    { return (((value) & ~0xff) == 0);        }
+        int  WEXITSTATUS()(int value)  { return ((value) & 0xff);                }
+        bool WIFSIGNALED()(int value)  { return ((((value) >> 8) & 0xff) != 0);  }
+        int  WTERMSIG()(int value)     { return (((value) >> 8) & 0xff);         }
+        bool WIFSTOPPED()(int value)   { return ((((value) >> 16) & 0xff) != 0); }
+        int  WSTOPSIG()(int value)     { return (((value) >> 16) & 0xff);        }
+        int  WIFCORED()(int value)     { return ((value) & 0x10000);             }
+        int  WIFCONTINUED()(int value) { return ((value) & 0x20000);             }
+    }
+}
 else
 {
     static assert(false, "Unsupported platform");
@@ -312,6 +354,12 @@ else version (NetBSD)
     //enum WCONTINUED     = 4;
     enum WNOWAIT        = 0x00010000;
 }
+else version (OpenBSD)
+{
+    // WSTOPPED not supported in OpenBSD as of
+    // https://github.com/openbsd/src/commit/f3be2f42f5e809acf35f1fd8bc29ab794b2323a1
+    enum WCONTINUED = 8;
+}
 else version (DragonFlyBSD)
 {
     enum WSTOPPED       = WUNTRACED;
@@ -369,6 +417,22 @@ else version (CRuntime_UClibc)
     enum WSTOPPED   = 2;
     enum WCONTINUED = 8;
     enum WNOWAIT    = 0x01000000;
+
+    enum idtype_t
+    {
+        P_ALL,
+        P_PID,
+        P_PGID
+    }
+
+    int waitid(idtype_t, id_t, siginfo_t*, int);
+}
+else version (Haiku)
+{
+    enum WCONTINUED  = 0x04;
+    enum WEXITED     = 0x08;
+    enum WSTOPPED    = 0x10;
+    enum WNOWAIT     = 0x20;
 
     enum idtype_t
     {

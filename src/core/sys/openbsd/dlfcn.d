@@ -1,7 +1,7 @@
 /**
  * D header file for OpenBSD.
  *
- * $(LINK2 http://cvsweb.openbsd.org/cgi-bin/cvsweb/src/include/link_elf.h?rev=1.6&content-type=text/x-cvsweb-markup, dlfcn.h)
+ * https://github.com/openbsd/src/blob/master/include/dlfcn.h
  */
 module core.sys.openbsd.dlfcn;
 
@@ -24,7 +24,8 @@ enum RTLD_SELF    = cast(void *)-3;
 enum DL_GETERRNO     = 1;
 enum DL_SETTHREADLCK = 2;
 enum DL_SETBINDLCK   = 3;
+enum DL_REFERENCE    = 4;
 
 enum DL_LAZY         = RTLD_LAZY;
 
-int dlctl(void *, int, void *);
+int dlctl(void*, int, void*);

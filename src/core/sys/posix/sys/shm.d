@@ -156,6 +156,82 @@ else version (NetBSD)
     int   shmdt(in void*);
     int   shmget(key_t, size_t, int);
 }
+else version (OpenBSD)
+{
+    version (X86)
+        enum _MAX_PAGE_SHIFT = 12; //https://github.com/openbsd/src/blob/master/sys/arch/i386/include/_types.h
+    else version (X86_64)
+        enum _MAX_PAGE_SHIFT = 12; //https://github.com/openbsd/src/blob/master/sys/arch/amd64/include/_types.h
+    else version (AArch64)
+        enum _MAX_PAGE_SHIFT = 12; //https://github.com/openbsd/src/blob/master/sys/arch/arm64/include/_types.h
+    else version (Alpha)
+        enum _MAX_PAGE_SHIFT = 13; //https://github.com/openbsd/src/blob/master/sys/arch/alpha/include/_types.h
+    else version (ARM)
+        enum _MAX_PAGE_SHIFT = 12; //https://github.com/openbsd/src/blob/master/sys/arch/arm/include/_types.h
+    else version (HPPA)
+        enum _MAX_PAGE_SHIFT = 12; //https://github.com/openbsd/src/blob/master/sys/arch/hppa/include/_types.h
+    else version (HPPA64)
+        enum _MAX_PAGE_SHIFT = 12; //https://github.com/openbsd/src/blob/master/sys/arch/hppa/include/_types.h
+    //else version (M88K) // Motorola 88000, no D version.
+    //    enum _MAX_PAGE_SHIFT = 12; //https://github.com/openbsd/src/blob/master/sys/arch/m88k/include/_types.h
+    else version (MIPS32)
+        static assert(0, "No MIPS32 support on OpenBSD");
+    else version (MIPS64)
+        enum _MAX_PAGE_SHIFT = 14; //https://github.com/openbsd/src/blob/master/sys/arch/mips64/include/_types.h
+    else version (PPC)
+        enum _MAX_PAGE_SHIFT = 12; //https://github.com/openbsd/src/blob/master/sys/arch/powerpc/include/_types.h
+    else version (PPC64)
+        enum _MAX_PAGE_SHIFT = 12; //https://github.com/openbsd/src/blob/master/sys/arch/powerpc/include/_types.h
+    else version (SH)
+        enum _MAX_PAGE_SHIFT = 12; //https://github.com/openbsd/src/blob/master/sys/arch/sh/include/_types.h
+    else version (SPARC64)
+        enum _MAX_PAGE_SHIFT = 13; //https://github.com/openbsd/src/blob/master/sys/arch/sparc64/include/_types.h
+    else
+        static assert(0, "_MAX_PAGE_SHIFT not defined for OpenBSD on target architecture.");
+
+    // https://github.com/openbsd/src/blob/master/sys/sys/shm.h
+    enum SHM_RDONLY     = 0x01000; // octal 010000
+    enum SHM_RND        = 0x02000; // octal 020000
+    enum SHMLBA         = 1U << _MAX_PAGE_SHIFT;
+
+    alias c_ulong   shmatt_t;
+
+    struct shmid_ds
+    {
+        ipc_perm    shm_perm;
+        int         shm_segsz;
+        pid_t       shm_lpid;
+        pid_t       shm_cpid;
+        shmatt_t    shm_nattch;
+        time_t      shm_atime;
+        c_long      __shm_atimensec;
+        time_t      shm_dtime;
+        c_long      __shm_dtimensec;
+        time_t      shm_ctime;
+        c_long      __shm_ctimensec;
+        void*       shm_internal;
+    }
+
+    struct shminfo
+    {
+        int shmmax;
+        int shmmin;
+        int shmmni;
+        int shmseg;
+        int shmall;
+    }
+
+    struct shm_sysctl_info
+    {
+        shminfo shminfo_;
+        shmid_ds[1] shmids;
+    }
+
+    void* shmat(int, in void*, int);
+    int   shmctl(int, int, shmid_ds*);
+    int   shmdt(in void*);
+    int   shmget(key_t, size_t, int);
+}
 else version (DragonFlyBSD)
 {
     enum SHM_RDONLY     = 0x01000; // 010000

@@ -78,6 +78,16 @@ else version (NetBSD)
         byte[104]   sun_path;
     }
 }
+else version (OpenBSD)
+{
+    // https://github.com/openbsd/src/blob/master/sys/sys/un.h
+    struct sockaddr_un
+    {
+        ubyte       sun_len;
+        sa_family_t sun_family;
+        byte[104]   sun_path;
+    }
+}
 else version (DragonFlyBSD)
 {
     struct sockaddr_un
@@ -93,5 +103,15 @@ else version (Solaris)
     {
         sa_family_t  sun_family;
         byte[108]    sun_path;
+    }
+}
+else version (Haiku)
+{
+    // https://github.com/haiku/haiku/blob/master/headers/posix/sys/un.h
+    struct sockaddr_un
+    {
+        ubyte       sun_len;
+        ubyte       sun_family;
+        ubyte[126]  sun_path;
     }
 }

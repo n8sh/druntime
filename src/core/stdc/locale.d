@@ -281,6 +281,23 @@ else version (CRuntime_UClibc)
     ///
     enum LC_IDENTIFICATION = 12;
 }
+else version (Haiku)
+{
+    ///
+    enum LC_ALL      = 0;
+    ///
+    enum LC_COLLATE  = 1;
+    ///
+    enum LC_CTYPE    = 2;
+    ///
+    enum LC_MONETARY = 3;
+    ///
+    enum LC_NUMERIC  = 4;
+    ///
+    enum LC_TIME     = 5;
+    ///
+    enum LC_MESSAGES = 6;
+}
 else
 {
     static assert(false, "Unsupported platform");

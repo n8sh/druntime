@@ -362,3 +362,31 @@ else version (CRuntime_UClibc)
 
     int poll(pollfd*, nfds_t, int);
 }
+else version (Haiku)
+{
+    // https://github.com/haiku/haiku/blob/master/headers/posix/poll.h
+    struct pollfd
+    {
+        int     fd;
+        short   events;
+        short   revents;
+    }
+
+    alias c_ulong nfds_t;
+
+    enum
+    {
+        POLLIN      = 0x0001,
+        POLLOUT     = 0x0002,
+        POLLRDNORM  = POLLIN,
+        POLLWRNORM  = POLLOUT,
+        POLLRDBAND  = 0x0008,
+        POLLWRBAND  = 0x0010,
+        POLLPRI     = 0x0020,
+        POLLERR     = 0x0004,
+        POLLHUP     = 0x0080,
+        POLLNVAL    = 0x1000,
+    }
+
+    int poll(pollfd*, nfds_t, int);
+}

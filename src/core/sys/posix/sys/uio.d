@@ -90,6 +90,18 @@ else version (NetBSD)
     ssize_t readv(int, in iovec*, int);
     ssize_t writev(int, in iovec*, int);
 }
+else version (OpenBSD)
+{
+    // https://github.com/openbsd/src/blob/master/sys/sys/uio.h
+    struct iovec
+    {
+        void*  iov_base;
+        size_t iov_len;
+    }
+
+    ssize_t readv(int, in iovec*, int);
+    ssize_t writev(int, in iovec*, int);
+}
 else version (DragonFlyBSD)
 {
     struct iovec
@@ -144,6 +156,18 @@ else version (CRuntime_UClibc)
 
     ssize_t readv(int, in iovec*, int);
     ssize_t writev(int, in iovec*, int);
+}
+else version (Haiku)
+{
+    // https://github.com/haiku/haiku/blob/master/headers/posix/sys/uio.h
+    struct iovec
+    {
+        void*  iov_base;
+        size_t iov_len;
+    }
+
+    ssize_t readv(int, in iovec*, size_t);
+    ssize_t writev(int, in iovec*, size_t);
 }
 else
 {

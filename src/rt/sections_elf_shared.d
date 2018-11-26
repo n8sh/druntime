@@ -14,6 +14,7 @@ version (CRuntime_Glibc) enum SharedELF = true;
 else version (CRuntime_Musl) enum SharedELF = true;
 else version (FreeBSD) enum SharedELF = true;
 else version (NetBSD) enum SharedELF = true;
+else version (OpenBSD) enum SharedELF = true;
 else version (DragonFlyBSD) enum SharedELF = true;
 else version (CRuntime_UClibc) enum SharedELF = true;
 else enum SharedELF = false;
@@ -42,6 +43,12 @@ else version (NetBSD)
     import core.sys.netbsd.dlfcn;
     import core.sys.netbsd.sys.elf;
     import core.sys.netbsd.sys.link_elf;
+}
+else version (OpenBSD)
+{
+    import core.sys.openbsd.dlfcn;
+    import core.sys.openbsd.sys.exec_elf;
+    import core.sys.openbsd.sys.link_elf;
 }
 else version (DragonFlyBSD)
 {
@@ -150,6 +157,7 @@ __gshared bool _isRuntimeInitialized;
 
 
 version (FreeBSD) private __gshared void* dummy_ref;
+version (OpenBSD) private __gshared void* dummy_ref;
 version (DragonFlyBSD) private __gshared void* dummy_ref;
 version (NetBSD) private __gshared void* dummy_ref;
 
@@ -161,6 +169,7 @@ void initSections() nothrow @nogc
     _isRuntimeInitialized = true;
     // reference symbol to support weak linkage
     version (FreeBSD) dummy_ref = &_d_dso_registry;
+    version (OpenBSD) dummy_ref = &_d_dso_registry;
     version (DragonFlyBSD) dummy_ref = &_d_dso_registry;
     version (NetBSD) dummy_ref = &_d_dso_registry;
 }
@@ -293,6 +302,7 @@ private:
 
 // start of linked list for ModuleInfo references
 version (FreeBSD) deprecated extern (C) __gshared void* _Dmodule_ref;
+version (OpenBSD) deprecated extern (C) __gshared void* _Dmodule_ref;
 version (DragonFlyBSD) deprecated extern (C) __gshared void* _Dmodule_ref;
 version (NetBSD) deprecated extern (C) __gshared void* _Dmodule_ref;
 
@@ -778,6 +788,10 @@ void scanSegments(in ref dl_phdr_info info, DSO* pdso) nothrow @nogc
             {
                 // uClibc doesn't provide a 'dlpi_tls_modid' definition
             }
+            else version (OpenBSD)
+            {
+                // FIXME: OpenBSD doesn't provide a 'dlpi_tls_modid' definition ??
+            }
             else
                 pdso._tlsMod = info.dlpi_tls_modid;
             pdso._tlsSize = phdr.p_memsz;
@@ -801,6 +815,7 @@ bool findDSOInfoForAddr(in void* addr, dl_phdr_info* result=null) nothrow @nogc
 {
     version (linux)       enum IterateManually = true;
     else version (NetBSD) enum IterateManually = true;
+    else version (OpenBSD) enum IterateManually = true;
     else                  enum IterateManually = false;
 
     static if (IterateManually)
@@ -862,6 +877,7 @@ bool findSegmentForAddr(in ref dl_phdr_info info, in void* addr, ElfW!"Phdr"* re
 version (linux) import core.sys.linux.errno : program_invocation_name;
 // should be in core.sys.freebsd.stdlib
 version (FreeBSD) extern(C) const(char)* getprogname() nothrow @nogc;
+version (OpenBSD) extern(C) const(char)* getprogname() nothrow @nogc;
 version (DragonFlyBSD) extern(C) const(char)* getprogname() nothrow @nogc;
 version (NetBSD) extern(C) const(char)* getprogname() nothrow @nogc;
 
@@ -869,6 +885,7 @@ version (NetBSD) extern(C) const(char)* getprogname() nothrow @nogc;
 {
     version (linux) return program_invocation_name;
     version (FreeBSD) return getprogname();
+    version (OpenBSD) return getprogname();
     version (DragonFlyBSD) return getprogname();
     version (NetBSD) return getprogname();
 }

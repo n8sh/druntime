@@ -379,6 +379,11 @@ else version (NetBSD)
 
     int ioctl(int, c_ulong, ...);
 }
+else version (OpenBSD)
+{
+    //https://github.com/openbsd/src/blob/master/sys/sys/ioctl.h
+    int ioctl(int, c_long, ...);
+}
 else version (DragonFlyBSD)
 {
     struct fiodgname_arg
@@ -733,6 +738,11 @@ else version (CRuntime_UClibc)
     enum SIOCPROTOPRIVATE = 0x89E0;
 
     int ioctl(int __fd, c_ulong __request, ...);
+}
+else version (Haiku)
+{
+    //https://github.com/haiku/haiku/blob/master/headers/posix/sys/ioctl.h
+    int ioctl(int, c_long, ...);
 }
 else
 {

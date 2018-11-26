@@ -952,6 +952,76 @@ else version (CRuntime_UClibc)
     enum AT_SYMLINK_NOFOLLOW    = 0x100;
     enum AT_FDCWD               = -100;
 }
+else version (Haiku)
+{
+    // https://github.com/haiku/haiku/blob/master/headers/posix/fcntl.h
+    enum
+    {
+        F_DUPFD         = 0x0001,
+        F_GETFD         = 0x0002,
+        F_SETFD         = 0x0004,
+        F_GETFL         = 0x0008,
+        F_SETFL         = 0x0010,
+        F_GETLK         = 0x0020,
+        F_SETLK         = 0x0080,
+        F_SETLKW        = 0x0100,
+        F_DUPFD_CLOEXEC = 0x0200,
+    }
+
+    enum
+    {
+        F_RDLCK         = 0x0040,
+        F_UNLCK         = 0x0200,
+        F_WRLCK         = 0x0400,
+    }
+
+    enum FD_CLOEXEC     = 1;
+
+    enum
+    {
+        O_RDONLY        = 0x0000,
+        O_WRONLY        = 0x0001,
+        O_RDWR          = 0x0002,
+        O_ACCMODE       = 0x0003,
+        O_RWMASK        = O_ACCMODE,
+    }
+
+    enum
+    {
+        O_EXCL          = 0x0100,
+        O_CREAT         = 0x0200,
+        O_TRUNC         = 0x0400,
+        O_NOCTTY        = 0x1000,
+        O_NOTRAVERSE    = 0x2000,
+    }
+
+    enum
+    {
+        O_CLOEXEC       = 0x00000040,
+        O_NONBLOCK      = 0x00000080,
+        O_NDELAY        = O_NONBLOCK,
+        O_APPEND        = 0x00000800,
+        O_SYNC          = 0x00010000,
+        O_RSYNC         = 0x00020000,
+        O_DSYNC         = 0x00040000,
+        O_NOFOLLOW      = 0x00080000,
+        O_NOCACHE       = 0x00100000,
+        O_DIRECT        = O_NOCACHE,
+        O_DIRECTORY     = 0x00200000,
+    }
+
+    enum
+    {
+        AT_FDCWD            =   -1,
+        AT_SYMLINK_NOFOLLOW = 0x01,
+        AT_SYMLINK_FOLLOW   = 0x02,
+        AT_REMOVEDIR        = 0x04,
+        AT_EACCESS          = 0x08,
+    }
+
+    int   creat(in char*, mode_t);
+    int   open(in char*, int, ...);
+}
 else
 {
     static assert(false, "Unsupported platform");
@@ -961,8 +1031,12 @@ else
 int fcntl(int, int, ...);
 //int open(in char*, int, ...);
 
+version (OpenBSD) {}
+else version (Haiku) {}
+else version = HasPosixFAllocate;
+
 // Generic Posix fallocate
-int posix_fallocate(int, off_t, off_t);
+version (HasPosixFAllocate) int posix_fallocate(int, off_t, off_t);
 
 //
 // Advisory Information (ADV)
