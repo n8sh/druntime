@@ -55,6 +55,17 @@ struct Rand48
             rng_state = mach_absolute_time();
             popFront();
         }
+        else version (LDC)
+        {
+            import ldc.intrinsics : llvm_readcyclecounter;
+            import ctime = core.stdc.time : time;
+
+            rng_state = llvm_readcyclecounter();
+            if (rng_state != 0)
+                popFront();
+            else
+                seed((cast(uint) ctime.time(null)));
+        }
         else
         {
             // Fallback to libc timestamp in seconds.
