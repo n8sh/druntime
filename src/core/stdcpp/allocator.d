@@ -282,9 +282,22 @@ version (CppRuntime_Microsoft)
     version (X86_64)
         version = INTEL_ARCH;
 
+    import core.stdcpp.xutility : __CXXLIB__;
+
     // HACK: should we guess _DEBUG for `debug` builds?
-    version (NDEBUG) {}
-    else debug version = _DEBUG;
+    version (_DEBUG)
+        private enum _DEBUG = true;
+    else version (NDEBUG)
+        private enum _DEBUG = false;
+    else static if (__CXXLIB__ == "libcmtd" || __CXXLIB__ == "msvcrtd")
+        private enum _DEBUG = true;
+    else static if (__CXXLIB__ == "libcmt" || __CXXLIB__ == "msvcrt" ||
+                    __CXXLIB__ == "msvcrt100" || __CXXLIB__ == "msvcrt110")
+        private enum _DEBUG = false;
+    else debug
+        private enum _DEBUG = true;
+    else
+        private enum _DEBUG = false;
 
     enum _New_alignof(T) = T.alignof > __STDCPP_DEFAULT_NEW_ALIGNMENT__ ? T.alignof : __STDCPP_DEFAULT_NEW_ALIGNMENT__;
 
@@ -298,7 +311,7 @@ version (CppRuntime_Microsoft)
         static assert(size_t.sizeof == (void*).sizeof, "uintptr_t is not the same size as size_t");
 
         // NOTE: this must track `_DEBUG` macro used in C++...
-        version (_DEBUG)
+        static if (_DEBUG)
             enum size_t _Non_user_size = 2 * (void*).sizeof + _Big_allocation_alignment - 1;
         else
             enum size_t _Non_user_size = (void*).sizeof + _Big_allocation_alignment - 1;
@@ -308,6 +321,7 @@ version (CppRuntime_Microsoft)
         else
             enum size_t _Big_allocation_sentinel = 0xFAFAFAFA;
 
+        extern(D)
         void* _Allocate_manually_vector_aligned(const size_t _Bytes) @nogc
         {
             size_t _Block_size = _Non_user_size + _Bytes;
@@ -320,11 +334,12 @@ version (CppRuntime_Microsoft)
             void* _Ptr = cast(void*)((_Ptr_container + _Non_user_size) & ~(_Big_allocation_alignment - 1));
             (cast(size_t*)_Ptr)[-1] = _Ptr_container;
 
-            version (_DEBUG)
+            static if (_DEBUG)
                 (cast(size_t*)_Ptr)[-2] = _Big_allocation_sentinel;
             return (_Ptr);
         }
 
+        extern(D)
         void _Adjust_manually_vector_aligned(ref void* _Ptr, ref size_t _Bytes) pure nothrow @nogc
         {
             _Bytes += _Non_user_size;
@@ -334,11 +349,12 @@ version (CppRuntime_Microsoft)
 
             // If the following asserts, it likely means that we are performing
             // an aligned delete on memory coming from an unaligned allocation.
-            assert(_Ptr_user[-2] == _Big_allocation_sentinel, "invalid argument");
+            static if (_DEBUG)
+                assert(_Ptr_user[-2] == _Big_allocation_sentinel, "invalid argument");
 
             // Extra paranoia on aligned allocation/deallocation; ensure _Ptr_container is
             // in range [_Min_back_shift, _Non_user_size]
-            version (_DEBUG)
+            static if (_DEBUG)
                 enum size_t _Min_back_shift = 2 * (void*).sizeof;
             else
                 enum size_t _Min_back_shift = (void*).sizeof;
