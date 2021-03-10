@@ -262,13 +262,15 @@ struct GC
         Duration maxCollectionTime;
     }
 
+extern(C):
+
     /**
      * Enables automatic garbage collection behavior if collections have
      * previously been suspended by a call to disable.  This function is
      * reentrant, and must be called once for every call to disable before
      * automatic collections are enabled.
      */
-    extern(C) pragma(mangle, "gc_enable") static void enable() nothrow; /* FIXME pure */
+    pragma(mangle, "gc_enable") static void enable() nothrow; /* FIXME pure */
 
 
     /**
@@ -278,7 +280,7 @@ struct GC
      * such as during an out of memory condition.  This function is reentrant,
      * but enable must be called once for each call to disable.
      */
-    extern(C) pragma(mangle, "gc_disable") static void disable() nothrow; /* FIXME pure */
+    pragma(mangle, "gc_disable") static void disable() nothrow; /* FIXME pure */
 
 
     /**
@@ -288,15 +290,16 @@ struct GC
      * and then to reclaim free space.  This action may need to suspend all
      * running threads for at least part of the collection process.
      */
-    extern(C) pragma(mangle, "gc_collect") static void collect() nothrow; /* FIXME pure */
+    pragma(mangle, "gc_collect") static void collect() nothrow; /* FIXME pure */
 
     /**
      * Indicates that the managed memory space be minimized by returning free
      * physical memory to the operating system.  The amount of free memory
      * returned depends on the allocator design and on program behavior.
      */
-    extern(C) pragma(mangle, "gc_minimize") static void minimize() nothrow; /* FIXME pure */
+    pragma(mangle, "gc_minimize") static void minimize() nothrow; /* FIXME pure */
 
+extern(D):
 
     /**
      * Elements for a bit field representing memory block attributes.  These
@@ -434,6 +437,7 @@ struct GC
         return gc_clrAttr( p, a );
     }
 
+extern(C):
 
     /**
      * Requests an aligned block of managed memory from the garbage collector.
@@ -455,8 +459,7 @@ struct GC
      * Throws:
      *  OutOfMemoryError on allocation failure.
      */
-    extern(C) pragma(mangle, "gc_malloc")
-    static void* malloc(size_t sz, uint ba = 0, const TypeInfo ti = null) pure nothrow;
+    pragma(mangle, "gc_malloc") static void* malloc(size_t sz, uint ba = 0, const TypeInfo ti = null) pure nothrow;
 
 
     /**
@@ -479,8 +482,7 @@ struct GC
      * Throws:
      *  OutOfMemoryError on allocation failure.
      */
-    extern(C) pragma(mangle, "gc_qalloc")
-    static BlkInfo qalloc(size_t sz, uint ba = 0, const TypeInfo ti = null) pure nothrow;
+    pragma(mangle, "gc_qalloc") static BlkInfo qalloc(size_t sz, uint ba = 0, const TypeInfo ti = null) pure nothrow;
 
 
     /**
@@ -504,8 +506,7 @@ struct GC
      * Throws:
      *  OutOfMemoryError on allocation failure.
      */
-    extern(C) pragma(mangle, "gc_calloc")
-    static void* calloc(size_t sz, uint ba = 0, const TypeInfo ti = null) pure nothrow;
+    pragma(mangle, "gc_calloc") static void* calloc(size_t sz, uint ba = 0, const TypeInfo ti = null) pure nothrow;
 
 
     /**
@@ -550,8 +551,7 @@ struct GC
      * Throws:
      *  `OutOfMemoryError` on allocation failure.
      */
-    extern(C) pragma(mangle, "gc_realloc")
-    static void* realloc(void* p, size_t sz, uint ba = 0, const TypeInfo ti = null) pure nothrow;
+    pragma(mangle, "gc_realloc") static void* realloc(void* p, size_t sz, uint ba = 0, const TypeInfo ti = null) pure nothrow;
 
     // https://issues.dlang.org/show_bug.cgi?id=13111
     ///
@@ -593,8 +593,7 @@ struct GC
      *  as an indicator of success. $(LREF capacity) should be used to
      *  retrieve actual usable slice capacity.
      */
-    extern(C) pragma(mangle, "gc_extend")
-    static size_t extend(void* p, size_t mx, size_t sz, const TypeInfo ti = null) pure nothrow;
+    pragma(mangle, "gc_extend") static size_t extend(void* p, size_t mx, size_t sz, const TypeInfo ti = null) pure nothrow;
     /// Standard extending
     unittest
     {
@@ -636,7 +635,7 @@ struct GC
      * Returns:
      *  The actual number of bytes reserved or zero on error.
      */
-    extern(C) pragma(mangle, "gc_reserve") static size_t reserve(size_t sz) nothrow; /* FIXME pure */
+    pragma(mangle, "gc_reserve") static size_t reserve(size_t sz) nothrow; /* FIXME pure */
 
 
     /**
@@ -650,8 +649,9 @@ struct GC
      * Params:
      *  p = A pointer to the root of a valid memory block or to null.
      */
-    extern(C) pragma(mangle, "gc_free") static void free(void* p) pure nothrow @nogc;
+    pragma(mangle, "gc_free") static void free(void* p) pure nothrow @nogc;
 
+extern(D):
 
     /**
      * Returns the base address of the memory block containing p.  This value
@@ -762,6 +762,8 @@ struct GC
         return gc_profileStats();
     }
 
+extern(C):
+
     /**
      * Adds an internal root pointing to the GC memory block referenced by p.
      * As a result, the block referenced by p itself and any blocks accessible
@@ -807,7 +809,7 @@ struct GC
      * }
      * ---
      */
-    extern(C) pragma(mangle, "gc_addRoot") static void addRoot(const void* p) nothrow @nogc; /* FIXME pure */
+    pragma(mangle, "gc_addRoot") static void addRoot(const void* p) nothrow @nogc; /* FIXME pure */
 
 
     /**
@@ -818,7 +820,7 @@ struct GC
      * Params:
      *  p = A pointer into a GC-managed memory block or null.
      */
-    extern(C) pragma(mangle, "gc_removeRoot") static void removeRoot(const void* p) nothrow @nogc; /* FIXME pure */
+    pragma(mangle, "gc_removeRoot") static void removeRoot(const void* p) nothrow @nogc; /* FIXME pure */
 
 
     /**
@@ -849,8 +851,7 @@ struct GC
      * // rawMemory will be recognized on collection.
      * ---
      */
-    extern(C) pragma(mangle, "gc_addRange")
-    static void addRange(const void* p, size_t sz, const TypeInfo ti = null) @nogc nothrow; /* FIXME pure */
+    pragma(mangle, "gc_addRange") static void addRange(const void* p, size_t sz, const TypeInfo ti = null) @nogc nothrow; /* FIXME pure */
 
 
     /**
@@ -862,7 +863,7 @@ struct GC
      * Params:
      *  p  = A pointer to a valid memory address or to null.
      */
-    extern(C) pragma(mangle, "gc_removeRange") static void removeRange(const void* p) nothrow @nogc; /* FIXME pure */
+    pragma(mangle, "gc_removeRange") static void removeRange(const void* p) nothrow @nogc; /* FIXME pure */
 
 
     /**
@@ -875,7 +876,7 @@ struct GC
      * Params:
      *  segment = address range of a code segment.
      */
-    extern(C) pragma(mangle, "gc_runFinalizers") static void runFinalizers(const scope void[] segment);
+    pragma(mangle, "gc_runFinalizers") static void runFinalizers(const scope void[] segment);
 
     /**
      * Queries the GC whether the current thread is running object finalization
@@ -889,7 +890,7 @@ struct GC
      *  true if the current thread is in a finalizer, a destructor invoked by
      *  the GC.
      */
-    extern(C) pragma(mangle, "gc_inFinalizer") static bool inFinalizer() nothrow @nogc @safe;
+    pragma(mangle, "gc_inFinalizer") static bool inFinalizer() nothrow @nogc @safe;
 
     ///
     @safe nothrow @nogc unittest
@@ -986,7 +987,7 @@ struct GC
      * since program start. It is the same as
      * GC.stats().allocatedInCurrentThread, but faster.
      */
-    extern(C) pragma(mangle, "gc_allocatedInCurrentThread") static ulong allocatedInCurrentThread() nothrow;
+    pragma(mangle, "gc_allocatedInCurrentThread") static ulong allocatedInCurrentThread() nothrow;
 
     /// Using allocatedInCurrentThread
     nothrow unittest
